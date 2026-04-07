@@ -340,11 +340,12 @@
       text-align: center;
       border: none;
       white-space: nowrap;
+      font-size: 13px;
     }
 
     table.bt-table tbody td:first-child {
       text-align: left;
-      font-size: 11.5px;
+      font-size: 12px;
     }
 
     table.bt-table tbody tr.bt-group-divider td {
@@ -480,6 +481,12 @@
       </div>
     </div>
 
+    <!-- Main figure -->
+    <div style="margin: 28px 0 0;">
+      <img src="main_figure.png" alt="ORS learns the occupancy measure and extracts goal-reaching information into a reward function" style="width:100%; display:block;">
+      <p class="fig-caption" style="margin-top:8px;"><em>ORS learns the occupancy measure (distribution of future states) and extracts goal-reaching information into a reward function such that states with future states closer to goal have higher rewards.</em></p>
+    </div>
+
     <div class="section-divider"></div>
 
     <!-- Abstract -->
@@ -516,13 +523,6 @@
         A <em>discounted occupancy model</em> \(d^\pi(s^+ \mid s, a)\) aggregates all future states reachable from \((s,a)\) under policy \(\pi\), weighted by temporal distance. States near goal \(g\) have occupancies that concentrate around \(g\); states far away have diffuse, spread-out occupancies. This geometric structure is exactly what credit assignment needs — and it emerges for free from the world model.
       </p>
 
-      <div class="fig-placeholder" role="img" aria-label="Occupancy model diagram: robot figure at s_t with arrows through faded silhouettes toward goal g, showing future state distribution">
-        <strong>Figure:</strong> Occupancy model future-state distribution diagram<br>
-        <span style="font-size:12px;">[Figure: robot at s_t → ghosted silhouettes → goal g, colored by temporal distance]</span>
-      </div>
-      <p class="fig-caption">
-        <em>The occupancy model predicts the future state distribution from any (s, a) pair, implicitly encoding proximity to the goal.</em>
-      </p>
     </div>
 
     <div class="section-divider"></div>
@@ -531,12 +531,34 @@
     <div>
       <div class="header">Method</div>
 
-      <div class="pipeline">
-        <div class="pipeline-box">Learn flow-matching<br>occupancy model</div>
-        <div class="pipeline-arrow">&rsaquo;&rsaquo;&rsaquo;</div>
-        <div class="pipeline-box">Extract occupancy-<br>shaped rewards</div>
-        <div class="pipeline-arrow">&rsaquo;&rsaquo;&rsaquo;</div>
-        <div class="pipeline-box">Downstream GCRL</div>
+      <div style="text-align:center; margin: 20px 0;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 220" style="width:100%; max-width:760px; display:inline-block;" aria-label="Pipeline: Learn flow-matching occupancy model → Extracted occupancy-shaped rewards → Use for downstream GCRL">
+          <!-- Circle 1 -->
+          <circle cx="120" cy="110" r="108" fill="white" stroke="#222" stroke-width="1.5"/>
+          <path d="M 42 55 A 88 88 0 0 1 198 55" fill="none" stroke="#bbb" stroke-width="1"/>
+          <text text-anchor="middle" font-family="sans-serif" font-size="17" fill="#111">
+            <tspan x="120" dy="95">Learn flow-matching</tspan>
+            <tspan x="120" dy="22">occupancy model</tspan>
+          </text>
+          <!-- Arrow 1 -->
+          <text x="262" y="122" text-anchor="middle" font-family="sans-serif" font-size="46" font-weight="900" fill="#111" letter-spacing="-6">»»</text>
+          <!-- Circle 2 -->
+          <circle cx="440" cy="110" r="108" fill="white" stroke="#222" stroke-width="1.5"/>
+          <path d="M 362 55 A 88 88 0 0 1 518 55" fill="none" stroke="#bbb" stroke-width="1"/>
+          <text text-anchor="middle" font-family="sans-serif" font-size="17" fill="#111">
+            <tspan x="440" dy="95">Extracted occupancy-</tspan>
+            <tspan x="440" dy="22">shaped rewards</tspan>
+          </text>
+          <!-- Arrow 2 -->
+          <text x="582" y="122" text-anchor="middle" font-family="sans-serif" font-size="46" font-weight="900" fill="#111" letter-spacing="-6">»»</text>
+          <!-- Circle 3 -->
+          <circle cx="755" cy="110" r="100" fill="white" stroke="#222" stroke-width="1.5"/>
+          <path d="M 682 57 A 82 82 0 0 1 828 57" fill="none" stroke="#bbb" stroke-width="1"/>
+          <text text-anchor="middle" font-family="sans-serif" font-size="17" fill="#111">
+            <tspan x="755" dy="95">Use for downstream</tspan>
+            <tspan x="755" dy="22">GCRL</tspan>
+          </text>
+        </svg>
       </div>
 
       <div class="subheading">Learning the Occupancy Model</div>
@@ -622,8 +644,8 @@
 
       <!-- Combined table -->
       <div style="overflow-x:auto; margin: 20px 0 6px;">
-        <p style="font-size:12px; color:#555; margin-bottom:6px;">Average success rate (%) across 5 test-time goals over 8 seeds. Bold = best within 95% bootstrapped CI.</p>
         <table class="bt-table">
+          <caption style="caption-side:bottom; font-size:12px; color:#555; text-align:left; padding-top:6px; font-style:italic;">ORS vs baselines: overall average (binary) success rate (%) across 5 test-time goals over 8 seeds per task. Bold = best within 95% bootstrapped CI.</caption>
           <thead>
             <tr>
               <th>Dataset</th>
@@ -662,7 +684,8 @@
 
       <!-- Histogram -->
       <div style="text-align:center; margin: 20px 0 0;">
-        <img src="histogram.png" alt="Mean success rate bar chart" style="width:240px;">
+        <img src="histogram.png" alt="Mean success rate bar chart" style="width:240px; display:inline-block;">
+        <p class="fig-caption" style="max-width:340px; margin: 6px auto 0;"><em>Average relative success rate (task-normalized) on 7 challenging <a href="https://seohong.me/projects/ogbench/" target="_blank" rel="noopener noreferrer">OGBench</a> tasks. Higher is better; 100% matches the best algorithm per task. ORS performs best, improving over the best baseline by 31%.</em></p>
       </div>
     </div>
 
