@@ -265,8 +265,8 @@
 
     .fig-caption {
       text-align: center;
-      font-size: 13px;
-      color: #888;
+      font-size: 15px;
+      color: #111;
       margin-top: 8px;
       font-style: italic;
     }
@@ -308,7 +308,7 @@
     table.bt-table {
       border-collapse: collapse;
       width: 100%;
-      font-size: 12px;
+      font-size: 13px;
       font-family: 'Barlow', sans-serif;
       font-weight: 300;
     }
@@ -340,12 +340,12 @@
       text-align: center;
       border: none;
       white-space: nowrap;
-      font-size: 13px;
+      font-size: 14px;
     }
 
     table.bt-table tbody td:first-child {
       text-align: left;
-      font-size: 12px;
+      font-size: 13px;
     }
 
     table.bt-table tbody tr.bt-group-divider td {
@@ -365,11 +365,11 @@
     }
 
     table.bt-table .bt-ors {
-      color: #641e16;
+      color: #c0392b;
     }
 
     table.bt-table .bt-ors-mean {
-      color: #641e16;
+      color: #c0392b;
       font-weight: 700;
     }
 
@@ -482,7 +482,7 @@
     </div>
 
     <!-- Main figure -->
-    <div style="margin: 28px 0 0;">
+    <div style="margin: 48px 0 0;">
       <img src="main_figure.png" alt="ORS learns the occupancy measure and extracts goal-reaching information into a reward function" style="width:100%; display:block;">
       <p class="fig-caption" style="margin-top:8px;"><em>ORS learns the occupancy measure (distribution of future states) and extracts goal-reaching information into a reward function such that states with future states closer to goal have higher rewards.</em></p>
     </div>
@@ -645,7 +645,7 @@
       <!-- Combined table -->
       <div style="overflow-x:auto; margin: 20px 0 6px;">
         <table class="bt-table">
-          <caption style="caption-side:bottom; font-size:12px; color:#555; text-align:left; padding-top:6px; font-style:italic;">ORS vs baselines: overall average (binary) success rate (%) across 5 test-time goals over 8 seeds per task. Bold = best within 95% bootstrapped CI.</caption>
+          <caption style="caption-side:bottom; font-size:15px; color:#111; text-align:left; padding-top:8px; font-style:italic;">ORS vs baselines: overall average (binary) success rate (%) across 5 test-time goals over 8 seeds per task. Bold = best within 95% bootstrapped CI.</caption>
           <thead>
             <tr>
               <th>Dataset</th>
