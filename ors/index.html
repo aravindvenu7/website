@@ -346,7 +346,6 @@
       <div class="nav-links">
         <a href="https://openreview.net/forum?id=EW8DskWQ1K" target="_blank" rel="noopener noreferrer">Paper</a>
         <a href="#" title="Coming soon" style="cursor:default; pointer-events:none;">Code</a>
-        <a href="#" title="Coming soon" style="cursor:default; pointer-events:none;">Slides</a>
         <a href="#citation">BibTeX&#8595;</a>
       </div>
     </div>
@@ -370,7 +369,6 @@
       <div style="margin-top: 20px;">
         <a class="btn-paper" href="https://openreview.net/forum?id=EW8DskWQ1K" target="_blank" rel="noopener noreferrer">📄 Paper</a>
         <a class="btn-paper disabled" href="#" title="Coming soon">💻 Code</a>
-        <a class="btn-paper disabled" href="#" title="Coming soon">🖼 Slides</a>
       </div>
     </div>
 
@@ -458,14 +456,6 @@
 
       <div class="subheading">Occupancy Models Encode State-Space Geometry</div>
 
-      <div class="prop-box">
-        <strong>Proposition 1</strong> <em>(Informal).</em> Under assumptions on goal reachability, dynamics, and dataset quality, for any \((s, a, g)\), the expected \(W_2^2\) distance \(\mathbb{E}_{a \sim \pi_\mathcal{D}}[W_2^2(\delta_g, d^{\pi_\mathcal{D}}(s^+ \mid s, a))]\) is monotonically decreasing in shortest-path distance to goal \(g\). Moreover:
-        \[
-          W_2^2(\delta_g, d^{\pi_\mathcal{D}}(s^+ \mid s, a^*)) \leq W_2^2(\delta_g, d^{\pi_\mathcal{D}}(s^+ \mid s, a))
-        \]
-        <em>where \(a^* \sim \pi^*(\cdot \mid s, g)\).</em>
-      </div>
-
       <p style="font-size: 16px; line-height: 1.7;">
         <strong>Intuition</strong>: States closer to goal \(g\) occupy inner level-set layers (layer \(k_0\)) around \(g\), while distant states lie in outer layers (\(k_1, k_2, k_3\ldots\)). The \(W_2^2\) distance grows monotonically with layer index \(k\) — making it a natural dense credit signal.
       </p>
@@ -484,9 +474,6 @@
         \mathcal{L}_{\text{rew}}(\psi) = \mathbb{E}_{s,a,g \sim \mathcal{D}} \left\| r^W_\psi(s,a,g) + \mathbb{E}_{\substack{x_1=g,\, x_0 \sim \mathcal{N}(0,I) \\ t \sim \mathcal{U}([0,1])}} \|v_\theta(t,s,a,x_t) - (x_1-x_0)\|_2^2 \right\|_2^2
       \]
 
-      <div class="prop-box">
-        <strong>Theorem</strong> <em>(Policy Optimality).</em> <em>Under assumptions on goal reachability, dynamics, and dataset quality, for any \((s,g)\), the greedy policy \(\pi^{\text{greedy}}(a \mid s,g)\) with respect to \(Q^*(s,a,g)\) computed under \(r^W(s,a,g)\) is optimal and reaches \(g\) in the minimum number of steps.</em>
-      </div>
     </div>
 
     <div class="section-divider"></div>
@@ -557,26 +544,6 @@
       <p class="fig-caption">
         <em>Left: ORS assigns higher rewards to states along goal-directed trajectories. Right: As a critic, ORS rewards maintain monotone value functions (low \(\delta_V\)) even under high noise — confirming improved credit assignment.</em>
       </p>
-    </div>
-
-    <div class="section-divider"></div>
-
-    <!-- Limitations -->
-    <div>
-      <div class="header">Limitations &amp; Future Work</div>
-
-      <div class="subheading">Limitations</div>
-      <ul style="font-size: 16px; line-height: 1.9;">
-        <li>Underperforms on highly <strong>combinatorial tasks</strong> (e.g., <code>puzzle-4x6</code>) where occupancy measures struggle with discrete object permutations.</li>
-        <li><strong>Computationally heavy</strong> for online RL due to occupancy model pretraining.</li>
-      </ul>
-
-      <div class="subheading">Future Work</div>
-      <ul style="font-size: 16px; line-height: 1.9;">
-        <li>Improve computational efficiency of occupancy learning.</li>
-        <li>Occupancy learning over <strong>filtered future states</strong> to reduce irrelevant signal.</li>
-        <li>Scale to <strong>VLA-size policy learning</strong> for robotics foundation models.</li>
-      </ul>
     </div>
 
     <div class="section-divider"></div>
