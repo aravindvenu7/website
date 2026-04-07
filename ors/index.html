@@ -300,6 +300,42 @@
       font-weight: 700;
     }
 
+    /* Task video grid */
+    .task-grid {
+      display: flex;
+      gap: 12px;
+      margin: 20px 0 8px;
+      justify-content: center;
+    }
+
+    .task-item {
+      flex: 1;
+      min-width: 0;
+      text-align: center;
+    }
+
+    .task-item video {
+      width: 100%;
+      border-radius: 6px;
+      display: block;
+    }
+
+    .task-caption {
+      font-size: 13px;
+      color: #555;
+      margin-top: 5px;
+      font-family: 'Barlow', sans-serif;
+    }
+
+    @media (max-width: 600px) {
+      .task-grid {
+        flex-wrap: wrap;
+      }
+      .task-item {
+        flex: 0 0 48%;
+      }
+    }
+
     /* BibTeX block */
     .bibtex-wrapper {
       position: relative;
@@ -478,9 +514,39 @@
 
     <div class="section-divider"></div>
 
-    <!-- Experiments -->
+    <!-- Evaluation -->
     <div>
-      <div class="header">Experiments</div>
+      <div class="header">Evaluation</div>
+
+      <div class="task-grid">
+        <div class="task-item">
+          <video autoplay loop muted playsinline>
+            <source src="videos/antmaze.mp4" type="video/mp4">
+          </video>
+          <div class="task-caption">antmaze</div>
+        </div>
+        <div class="task-item">
+          <video autoplay loop muted playsinline>
+            <source src="videos/cube.mp4" type="video/mp4">
+          </video>
+          <div class="task-caption">cube</div>
+        </div>
+        <div class="task-item">
+          <video autoplay loop muted playsinline>
+            <source src="videos/scene.mp4" type="video/mp4">
+          </video>
+          <div class="task-caption">scene</div>
+        </div>
+        <div class="task-item">
+          <video autoplay loop muted playsinline>
+            <source src="videos/puzzle.mp4" type="video/mp4">
+          </video>
+          <div class="task-caption">puzzle</div>
+        </div>
+      </div>
+      <ul style="font-size: 16px; line-height: 1.9;">
+        <li>Tasks of varying complexity and dataset quality from 4 categories of <a href="https://seohong.me/projects/ogbench/" target="_blank" rel="noopener noreferrer">OGBench</a> datasets.</li>
+      </ul>
 
       <div class="subheading">Benchmarks</div>
       <ul style="font-size: 16px; line-height: 1.9;">
