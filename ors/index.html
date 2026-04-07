@@ -687,6 +687,21 @@
         <img src="histogram.png" alt="Mean success rate bar chart" style="width:240px; display:inline-block;">
         <p class="fig-caption" style="max-width:340px; margin: 6px auto 0;"><em>Average relative success rate (task-normalized) on 7 challenging <a href="https://seohong.me/projects/ogbench/" target="_blank" rel="noopener noreferrer">OGBench</a> tasks. Higher is better; 100% matches the best algorithm per task. ORS performs best, improving over the best baseline by 31%.</em></p>
       </div>
+
+      <!-- Value learning subsection -->
+      <div class="subheading" style="margin-top: 32px;">Does ORS improve value function learning?</div>
+      <div style="display:flex; gap:16px; margin: 16px 0 8px; align-items:flex-start;">
+        <div style="flex:1; min-width:0; text-align:center;">
+          <img src="nmc_all.png" alt="Value non-monotonicity vs noise level" style="width:100%; display:block;">
+        </div>
+        <div style="flex:1; min-width:0; text-align:center;">
+          <img src="ors_val.png" alt="Value function estimates over trajectories" style="width:100%; display:block;">
+        </div>
+        <div style="flex:1; min-width:0; text-align:center;">
+          <img src="scatter_plot.png" alt="ORS reward scatter over state space" style="width:100%; display:block;">
+        </div>
+      </div>
+      <p class="fig-caption"><em><strong>Left:</strong> ORS leads to lower average value non-monotonicity \(\delta_V\) at lower noise levels \((\sigma_v)\) over expert trajectories compared to sparse rewards or using \(\hat{V}(s,g) = r_W(s,g)\) directly. <strong>Center:</strong> ORS induces less noisy estimates of \(\hat{V}(s,g)\) over expert trajectories even for long horizons. <strong>Right:</strong> ORS rewards over 5000 state-action pairs for a single fixed goal smoothly decay in magnitude with temporal distance from goal. All plots computed over antmaze-giant-navigate.</em></p>
     </div>
 
     <div class="section-divider"></div>
