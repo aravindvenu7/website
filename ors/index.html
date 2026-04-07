@@ -56,7 +56,7 @@
     .header {
       font-size: 18pt;
       color: #111;
-      font-weight: 400;
+      font-weight: 700;
       margin-bottom: 16px;
       margin-top: 36px;
     }
@@ -492,15 +492,21 @@
     <!-- Abstract -->
     <div>
       <div class="header">Abstract</div>
-      <p style="font-size: 16px; line-height: 1.7; max-width: 800px;">
-        Offline Goal-Conditioned Reinforcement Learning (GCRL) trains policies to reach goals using static datasets and simple sparse rewards \(r(s) = \mathbf{1}\{s = g\}\). While elegant and domain-agnostic, sparse rewards create a fundamental <strong>credit assignment problem</strong>: value functions become noisy and policies fail to generalize.
-      </p>
-      <p style="font-size: 16px; line-height: 1.7; max-width: 800px;">
-        We observe that <strong>generative world models — specifically, flow-matching occupancy models — implicitly encode the temporal geometry of the state space</strong>, capturing which future states lead toward a goal. We formalize this: the Wasserstein-2 distance between a goal point-mass and the learned occupancy measure is <em>monotonically decreasing</em> in shortest-path distance to the goal.
-      </p>
-      <p style="font-size: 16px; line-height: 1.7; max-width: 800px;">
-        We introduce <strong>Occupancy Reward Shaping (ORS)</strong>: a method that extracts goal-reaching information from the occupancy model as a reward-shaping term \(r^W(s,a,g)\), computable <em>without</em> ODE integration. ORS provably preserves the optimal, shortest-path policy. On <strong>13 sparse-reward robotics tasks</strong> (OGBench) and <strong>3 real-world tokamak plasma control tasks</strong>, ORS achieves <strong>23%–217% improvements</strong> over competitive baselines.
-      </p>
+      <div style="overflow: hidden;">
+        <div style="float: right; margin: 0 0 12px 24px; text-align: center; width: 240px;">
+          <img src="histogram.png" alt="Mean success rate bar chart" style="width: 240px; display: block;">
+          <p class="fig-caption" style="max-width: 240px; margin: 6px 0 0;"><em>Average relative success rate (task-normalized) on 7 challenging <a href="https://seohong.me/projects/ogbench/" target="_blank" rel="noopener noreferrer">OGBench</a> tasks. Higher is better; 100% matches the best algorithm per task. ORS performs best, improving over the best baseline by 31%.</em></p>
+        </div>
+        <p style="font-size: 16px; line-height: 1.7;">
+          Offline Goal-Conditioned Reinforcement Learning (GCRL) trains policies to reach goals using static datasets and simple sparse rewards \(r(s) = \mathbf{1}\{s = g\}\). While elegant and domain-agnostic, sparse rewards create a fundamental <strong>credit assignment problem</strong>: value functions become noisy and policies fail to generalize.
+        </p>
+        <p style="font-size: 16px; line-height: 1.7;">
+          We observe that <strong>generative world models — specifically, flow-matching occupancy models — implicitly encode the temporal geometry of the state space</strong>, capturing which future states lead toward a goal. We formalize this: the Wasserstein-2 distance between a goal point-mass and the learned occupancy measure is <em>monotonically decreasing</em> in shortest-path distance to the goal.
+        </p>
+        <p style="font-size: 16px; line-height: 1.7;">
+          We introduce <strong>Occupancy Reward Shaping (ORS)</strong>: a method that extracts goal-reaching information from the occupancy model as a reward-shaping term \(r^W(s,a,g)\), computable <em>without</em> ODE integration. ORS provably preserves the optimal, shortest-path policy. On <strong>13 sparse-reward robotics tasks</strong> (OGBench) and <strong>3 real-world tokamak plasma control tasks</strong>, ORS achieves <strong>23%–217% improvements</strong> over competitive baselines.
+        </p>
+      </div>
     </div>
 
     <div class="section-divider"></div>
@@ -561,7 +567,7 @@
         </svg>
       </div>
 
-      <div class="subheading">Learning the Occupancy Model</div>
+      <div class="subheading"><strong>Learning the Occupancy Model</strong></div>
       <p style="font-size: 16px; line-height: 1.7;">
         The discounted occupancy measure is:
       </p>
@@ -584,13 +590,13 @@
         where \(\mathcal{L}_{\text{next}}\) matches the immediate next state and \(\mathcal{L}_{\text{future}}\) bootstraps long-horizon occupancy with a target network.
       </p>
 
-      <div class="subheading">Occupancy Models Encode State-Space Geometry</div>
+      <div class="subheading"><strong>Occupancy Models Encode State-Space Geometry</strong></div>
 
       <p style="font-size: 16px; line-height: 1.7;">
         <strong>Intuition</strong>: States closer to goal \(g\) occupy inner level-set layers (layer \(k_0\)) around \(g\), while distant states lie in outer layers (\(k_1, k_2, k_3\ldots\)). The \(W_2^2\) distance grows monotonically with layer index \(k\) — making it a natural dense credit signal.
       </p>
 
-      <div class="subheading">Extracting Goal-Reaching Information (Without Solving an ODE)</div>
+      <div class="subheading"><strong>Extracting Goal-Reaching Information (Without Solving an ODE)</strong></div>
       <p style="font-size: 16px; line-height: 1.7;">
         The flow-matching loss provides a tractable upper bound on \(W_2^2\) [Haviv et al., 2025; Lv et al., 2025; Park et al., 2025]:
       </p>
@@ -682,14 +688,8 @@
         </table>
       </div>
 
-      <!-- Histogram -->
-      <div style="text-align:center; margin: 20px 0 0;">
-        <img src="histogram.png" alt="Mean success rate bar chart" style="width:240px; display:inline-block;">
-        <p class="fig-caption" style="max-width:340px; margin: 6px auto 0;"><em>Average relative success rate (task-normalized) on 7 challenging <a href="https://seohong.me/projects/ogbench/" target="_blank" rel="noopener noreferrer">OGBench</a> tasks. Higher is better; 100% matches the best algorithm per task. ORS performs best, improving over the best baseline by 31%.</em></p>
-      </div>
-
       <!-- Value learning subsection -->
-      <div class="subheading" style="margin-top: 32px;">Does ORS improve value function learning?</div>
+      <div class="subheading" style="margin-top: 32px; font-size: 17px;"><strong>Does ORS improve value function learning?</strong></div>
       <div style="display:flex; gap:16px; margin: 16px 0 8px; align-items:flex-start;">
         <div style="flex:1; min-width:0; text-align:center;">
           <img src="nmc_all.png" alt="Value non-monotonicity vs noise level" style="width:100%; display:block;">
