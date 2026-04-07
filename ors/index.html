@@ -544,71 +544,8 @@
           <div class="task-caption">puzzle</div>
         </div>
       </div>
-      <ul style="font-size: 16px; line-height: 1.9;">
-        <li>Tasks of varying complexity and dataset quality from 4 categories of <a href="https://seohong.me/projects/ogbench/" target="_blank" rel="noopener noreferrer">OGBench</a> datasets.</li>
-      </ul>
-
-      <div class="subheading">Benchmarks</div>
-      <ul style="font-size: 16px; line-height: 1.9;">
-        <li><strong>OGBench</strong> [Park et al., 2025]: 13 sparse-reward tasks across 4 domains — <code>antmaze</code>, <code>cube</code>, <code>scene</code>, <code>puzzle</code> — with both "play" (clean) and "noisy" dataset variants.</li>
-        <li><strong>Tokamak plasma control</strong>: 3 real-world-motivated continuous control tasks (\(\beta_N\) Tracking, Density Tracking, Rotation Tracking) on a nuclear fusion reactor simulator.</li>
-      </ul>
-
-      <div class="subheading">Main Results — OGBench</div>
       <p style="font-size: 16px; line-height: 1.7;">
-        ORS achieves a <strong>mean success rate of 44.2%</strong>, outperforming all baselines.
-      </p>
-      <div class="table-wrapper">
-        <table class="results-table">
-          <thead>
-            <tr>
-              <th>Method</th>
-              <th>Mean Success Rate</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>GCBC</td><td>2.5</td></tr>
-            <tr><td>GC-IVL</td><td>15.9</td></tr>
-            <tr><td>QRL</td><td>6.9</td></tr>
-            <tr><td>CRL</td><td>13.7</td></tr>
-            <tr><td>GC-IQL</td><td>20.0</td></tr>
-            <tr><td>HIQL</td><td>20.0</td></tr>
-            <tr><td>SAW</td><td>25.8</td></tr>
-            <tr><td>n-step returns</td><td>12.7</td></tr>
-            <tr><td>GCIQL-O</td><td>23.2</td></tr>
-            <tr><td>Go-Fresh</td><td>35.8</td></tr>
-            <tr class="ors-row"><td><strong>ORS (ours)</strong></td><td><strong>44.2</strong></td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="subheading">Real-World Results — Tokamak Plasma Control</div>
-      <div class="table-wrapper">
-        <table class="results-table">
-          <thead>
-            <tr>
-              <th>Task</th>
-              <th>Best Baseline</th>
-              <th>ORS</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>\(\beta_N\) Tracking</td><td>−44.76 ± 8.42</td><td><strong>−44.76 ± 8.42</strong></td></tr>
-            <tr><td>Density Tracking</td><td>−25.6 ± 4.1</td><td><strong>−26.9 ± 6.6</strong></td></tr>
-            <tr><td>Rotation Tracking</td><td>−22.4 ± 0.3</td><td><strong>−22.4 ± 0.6</strong></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p style="font-size: 14px; color: #888; margin-top: 6px;">(Lower tracking error is better.)</p>
-
-      <div class="subheading">Credit Assignment Analysis</div>
-
-      <div class="fig-placeholder" role="img" aria-label="Two-panel figure: left panel shows ORS reward heatmap on antmaze-giant maze, right panel shows value noise vs non-monotone transition fraction comparing ORS vs sparse rewards">
-        <strong>Figure:</strong> Credit assignment analysis<br>
-        <span style="font-size:12px;">[Left: ORS reward heatmap on Antmaze Giant — yellow/green along optimal path. Right: ORS rewards maintain monotone value functions under high noise (low δ_V) compared to sparse rewards.]</span>
-      </div>
-      <p class="fig-caption">
-        <em>Left: ORS assigns higher rewards to states along goal-directed trajectories. Right: As a critic, ORS rewards maintain monotone value functions (low \(\delta_V\)) even under high noise — confirming improved credit assignment.</em>
+        We evaluate ORS on 13 sparse-reward tasks of varying dataset quality and task complexity from 4 categories of <a href="https://seohong.me/projects/ogbench/" target="_blank" rel="noopener noreferrer">OGBench</a> datasets — antmaze, cube, scene and puzzle.
       </p>
     </div>
 
