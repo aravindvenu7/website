@@ -481,8 +481,12 @@
       </div>
     </div>
 
+    <div class="callout" style="margin: 28px 0 0;">
+      <em>How do we learn reward functions for credit assignment that accurately capture long-term temporal dependencies and goal-reaching information present in offline data?</em>
+    </div>
+
     <!-- Main figure -->
-    <div style="margin: 48px 0 0;">
+    <div style="margin: 28px 0 0;">
       <video autoplay loop muted playsinline style="width:100%; display:block;">
         <source src="ors_gif.mp4" type="video/mp4">
       </video>
@@ -491,46 +495,21 @@
 
     <div class="section-divider"></div>
 
-    <!-- Abstract -->
+    <!-- Overview -->
     <div>
-      <div class="header">Abstract</div>
+      <div class="header">Overview</div>
       <div style="overflow: hidden;">
         <div style="float: right; margin: 0 0 12px 24px; text-align: center; width: 240px;">
           <img src="histogram.png" alt="Mean success rate bar chart" style="width: 240px; display: block;">
           <p class="fig-caption" style="max-width: 240px; margin: 6px 0 0;"><em>Average relative success rate (task-normalized) on 7 challenging <a href="https://seohong.me/projects/ogbench/" target="_blank" rel="noopener noreferrer">OGBench</a> tasks. Higher is better; 100% matches the best algorithm per task. ORS performs best, improving over the best baseline by 31%.</em></p>
         </div>
-        <p style="font-size: 16px; line-height: 1.7;">
-          Offline Goal-Conditioned Reinforcement Learning (GCRL) trains policies to reach goals using static datasets and simple sparse rewards \(r(s) = \mathbf{1}\{s = g\}\). While elegant and domain-agnostic, sparse rewards create a fundamental <strong>credit assignment problem</strong>: value functions become noisy and policies fail to generalize.
-        </p>
-        <p style="font-size: 16px; line-height: 1.7;">
-          We observe that <strong>generative world models — specifically, flow-matching occupancy models — implicitly encode the temporal geometry of the state space</strong>, capturing which future states lead toward a goal. We formalize this: the Wasserstein-2 distance between a goal point-mass and the learned occupancy measure is <em>monotonically decreasing</em> in shortest-path distance to the goal.
-        </p>
-        <p style="font-size: 16px; line-height: 1.7;">
-          We introduce <strong>Occupancy Reward Shaping (ORS)</strong>: a method that extracts goal-reaching information from the occupancy model as a reward-shaping term \(r^W(s,a,g)\), computable <em>without</em> ODE integration. ORS provably preserves the optimal, shortest-path policy. On <strong>13 sparse-reward robotics tasks</strong> (OGBench) and <strong>3 real-world tokamak plasma control tasks</strong>, ORS achieves <strong>23%–217% improvements</strong> over competitive baselines.
-        </p>
+        <ul style="font-size: 16px; line-height: 1.8; padding-left: 20px; margin: 0;">
+          <li style="margin-bottom: 14px;">Offline goal-conditioned RL with sparse rewards suffers from a <strong>credit assignment problem</strong>. This triggers a cascade: sparse rewards → noisy value functions → bad policies → ineffective GCRL. Prior reward shaping methods either require per-task manual reward design or rely on graph-building methods that don't scale with task complexity.</li>
+          <li style="margin-bottom: 14px;">We observe that <strong>generative world models — specifically, flow-matching models of the occupancy measure — implicitly encode the temporal geometry of the state space</strong>, capturing which future states lead toward a goal.</li>
+          <li style="margin-bottom: 14px;">We formalize how such models encode temporal geometry and propose <strong>Occupancy Reward Shaping (ORS)</strong>: a method that extracts goal-reaching information from the occupancy model as a reward-shaping term \(r^W(s,a,g)\) while preserving the optimal policy.</li>
+          <li style="margin-bottom: 0;">On <strong>13 sparse-reward robotics tasks</strong> (OGBench), ORS achieves <strong>23%–217% improvements</strong> over competitive baselines.</li>
+        </ul>
       </div>
-    </div>
-
-    <div class="section-divider"></div>
-
-    <!-- Overview -->
-    <div>
-      <div class="header">Overview</div>
-
-      <div class="subheading">The Credit Assignment Problem</div>
-      <p style="font-size: 16px; line-height: 1.7;">
-        Standard GCRL uses reward \(r(s) = \mathbf{1}\{s=g\}\) — non-zero only at the goal. This triggers a cascade: sparse rewards → noisy value functions → bad policies → ineffective GCRL. Prior reward shaping methods either require per-task manual design or rely on local classifiers that miss long-range temporal structure.
-      </p>
-
-      <div class="callout">
-        <em>How do we learn reward functions for credit assignment that accurately capture long-term temporal dependencies and goal-reaching information present in offline data?</em>
-      </div>
-
-      <div class="subheading">World Models Capture Temporal Geometry</div>
-      <p style="font-size: 16px; line-height: 1.7;">
-        A <em>discounted occupancy model</em> \(d^\pi(s^+ \mid s, a)\) aggregates all future states reachable from \((s,a)\) under policy \(\pi\), weighted by temporal distance. States near goal \(g\) have occupancies that concentrate around \(g\); states far away have diffuse, spread-out occupancies. This geometric structure is exactly what credit assignment needs — and it emerges for free from the world model.
-      </p>
-
     </div>
 
     <div class="section-divider"></div>
