@@ -300,6 +300,10 @@
       font-weight: 700;
     }
 
+    table.results-table .ors-cell {
+      color: #641e16;
+    }
+
     /* Task video grid */
     .task-grid {
       display: flex;
@@ -547,6 +551,85 @@
       <p style="font-size: 16px; line-height: 1.7;">
         We evaluate ORS on 13 sparse-reward tasks of varying dataset quality and task complexity from 4 categories of <a href="https://seohong.me/projects/ogbench/" target="_blank" rel="noopener noreferrer">OGBench</a> datasets — antmaze, cube, scene and puzzle.
       </p>
+
+      <!-- Table 1 + histogram side by side -->
+      <div style="display:flex; gap:24px; align-items:flex-start; margin: 24px 0 8px;">
+        <div style="flex:1; min-width:0; overflow-x:auto;">
+          <p style="font-size:13px; color:#555; margin-bottom:6px;"><strong>Table 1.</strong> ORS vs baselines. Average success rate (%) over 8 seeds. Bold = best within 95% CI.</p>
+          <table class="results-table" style="font-size:13px; white-space:nowrap;">
+            <thead>
+              <tr>
+                <th>Dataset</th>
+                <th>GCBC</th>
+                <th>GC-IVL</th>
+                <th>QRL</th>
+                <th>CRL</th>
+                <th>GC-IQL</th>
+                <th>Go-Fresh</th>
+                <th style="color:#641e16;">ORS (ours)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="8" style="background:#f5f5f5; font-size:12px; color:#888; padding:4px 8px;"><em>play / navigate datasets</em></td></tr>
+              <tr><td>antmaze-large-navigate</td><td>25±3</td><td>18±3</td><td>64±18</td><td><strong>90±4</strong></td><td>34±4</td><td><strong>88±3</strong></td><td class="ors-cell"><strong>88±7</strong></td></tr>
+              <tr><td>antmaze-giant-navigate</td><td>0±0</td><td>0±0</td><td>9±4</td><td>39±8</td><td>0±0</td><td>30±10</td><td class="ors-cell"><strong>56±9</strong></td></tr>
+              <tr><td>cube-double-play</td><td>1±1</td><td>36±3</td><td>1±0</td><td>10±2</td><td><strong>40±5</strong></td><td>17±6</td><td class="ors-cell"><strong>45±7</strong></td></tr>
+              <tr><td>cube-triple-play</td><td>0±0</td><td>1±1</td><td>0±0</td><td>6±3</td><td>7±3</td><td>18±5</td><td class="ors-cell"><strong>37±8</strong></td></tr>
+              <tr><td>puzzle-4x4-play</td><td>0±0</td><td>13±2</td><td>0±0</td><td>0±0</td><td>26±3</td><td><strong>74±6</strong></td><td class="ors-cell"><strong>70±5</strong></td></tr>
+              <tr><td>puzzle-4x5-play</td><td>0±0</td><td>7±1</td><td>0±0</td><td>1±0</td><td>14±1</td><td><strong>20±1</strong></td><td class="ors-cell"><strong>20±0</strong></td></tr>
+              <tr><td>puzzle-4x6-play</td><td>0±0</td><td>10±2</td><td>0±0</td><td>4±1</td><td>12±1</td><td>17±4</td><td class="ors-cell"><strong>20±2</strong></td></tr>
+              <tr><td>scene-play</td><td>5±1</td><td>42±4</td><td>5±1</td><td>19±2</td><td>51±4</td><td>56±10</td><td class="ors-cell"><strong>80±4</strong></td></tr>
+              <tr><td colspan="8" style="background:#f5f5f5; font-size:12px; color:#888; padding:4px 8px;"><em>noisy / explore datasets</em></td></tr>
+              <tr><td>antmaze-large-explore</td><td>0±0</td><td>8±6</td><td>0±0</td><td>0±0</td><td>1±1</td><td><strong>38±10</strong></td><td class="ors-cell">22±7</td></tr>
+              <tr><td>cube-triple-noisy</td><td>1±1</td><td>9±1</td><td>1±0</td><td>3±1</td><td>2±1</td><td>5±4</td><td class="ors-cell"><strong>22±7</strong></td></tr>
+              <tr><td>puzzle-4x4-noisy</td><td>0±0</td><td>20±3</td><td>0±0</td><td>0±0</td><td>29±7</td><td><strong>50±5</strong></td><td class="ors-cell"><strong>56±7</strong></td></tr>
+              <tr><td>puzzle-4x6-noisy</td><td>0±0</td><td>17±2</td><td>0±0</td><td>6±3</td><td><strong>18±2</strong></td><td><strong>19±4</strong></td><td class="ors-cell"><strong>19±1</strong></td></tr>
+              <tr><td>scene-noisy</td><td>1±1</td><td>26±5</td><td>9±1</td><td>1±1</td><td>26±2</td><td>34±5</td><td class="ors-cell"><strong>40±5</strong></td></tr>
+              <tr class="ors-row"><td><strong>Mean</strong></td><td>2.5</td><td>15.9</td><td>6.9</td><td>13.7</td><td>20.0</td><td>35.8</td><td><strong>44.2</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="flex:0 0 auto; display:flex; align-items:center; justify-content:center; padding-top:28px;">
+          <img src="histogram.png" alt="Mean success rate bar chart comparing ORS to baselines" style="width:200px; display:block;">
+        </div>
+      </div>
+
+      <!-- Table 2 -->
+      <div style="overflow-x:auto; margin: 24px 0 8px;">
+        <p style="font-size:13px; color:#555; margin-bottom:6px;"><strong>Table 2.</strong> ORS vs long-horizon sparse-reward strategies. Average success rate (%) over 8 seeds. Bold = best within 95% CI.</p>
+        <table class="results-table" style="font-size:13px; white-space:nowrap;">
+          <thead>
+            <tr>
+              <th>Dataset</th>
+              <th>HIQL</th>
+              <th>SAW</th>
+              <th>SMORE</th>
+              <th>n-step GCIQL</th>
+              <th>GCIQL-OTA</th>
+              <th>Go-Fresh</th>
+              <th style="color:#641e16;">ORS (ours)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="8" style="background:#f5f5f5; font-size:12px; color:#888; padding:4px 8px;"><em>play / navigate datasets</em></td></tr>
+            <tr><td>antmaze-large-navigate</td><td><strong>91±2</strong></td><td>86±5</td><td>22±5</td><td>53±9</td><td>90±4</td><td>88±3</td><td class="ors-cell">88±7</td></tr>
+            <tr><td>antmaze-giant-navigate</td><td><strong>72±7</strong></td><td>48±9</td><td>1±1</td><td>1±1</td><td>26±5</td><td>30±10</td><td class="ors-cell">56±9</td></tr>
+            <tr><td>cube-double-play</td><td>6±2</td><td><strong>40±7</strong></td><td>2±2</td><td>4±3</td><td>3±2</td><td>17±6</td><td class="ors-cell"><strong>45±7</strong></td></tr>
+            <tr><td>cube-triple-play</td><td>3±2</td><td>6±6</td><td>0±0</td><td>1±1</td><td>2±2</td><td>18±5</td><td class="ors-cell"><strong>37±8</strong></td></tr>
+            <tr><td>puzzle-4x4-play</td><td>7±2</td><td>17±12</td><td>0±0</td><td>46±5</td><td><strong>85±4</strong></td><td>74±6</td><td class="ors-cell">70±5</td></tr>
+            <tr><td>puzzle-4x5-play</td><td>8±4</td><td>8±4</td><td>0±0</td><td>5±2</td><td>19±1</td><td><strong>20±1</strong></td><td class="ors-cell"><strong>20±0</strong></td></tr>
+            <tr><td>puzzle-4x6-play</td><td>3±1</td><td>8±4</td><td>0±0</td><td>14±3</td><td>15±3</td><td>17±4</td><td class="ors-cell"><strong>20±2</strong></td></tr>
+            <tr><td>scene-play</td><td>38±3</td><td>63±6</td><td>8±2</td><td>26±7</td><td>42±7</td><td>56±10</td><td class="ors-cell"><strong>80±4</strong></td></tr>
+            <tr><td colspan="8" style="background:#f5f5f5; font-size:12px; color:#888; padding:4px 8px;"><em>noisy / explore datasets</em></td></tr>
+            <tr><td>antmaze-large-explore</td><td>0±0</td><td>15±8</td><td>0±0</td><td>0±0</td><td>0±0</td><td><strong>38±10</strong></td><td class="ors-cell">22±7</td></tr>
+            <tr><td>cube-triple-noisy</td><td>2±1</td><td>0±0</td><td>1±1</td><td>2±1</td><td>2±1</td><td>5±4</td><td class="ors-cell"><strong>22±7</strong></td></tr>
+            <tr><td>puzzle-4x4-noisy</td><td>3±3</td><td>3±3</td><td>0±0</td><td>0±0</td><td>0±0</td><td><strong>50±5</strong></td><td class="ors-cell"><strong>56±7</strong></td></tr>
+            <tr><td>puzzle-4x6-noisy</td><td>2±1</td><td>8±6</td><td>0±0</td><td>12±6</td><td>15±3</td><td><strong>19±4</strong></td><td class="ors-cell"><strong>19±1</strong></td></tr>
+            <tr><td>scene-noisy</td><td>25±4</td><td>33±6</td><td>3±2</td><td>2±2</td><td>3±2</td><td>34±5</td><td class="ors-cell"><strong>40±5</strong></td></tr>
+            <tr class="ors-row"><td><strong>Mean</strong></td><td>20.0</td><td>25.8</td><td>2.8</td><td>12.7</td><td>23.2</td><td>35.8</td><td><strong>44.2</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <div class="section-divider"></div>
