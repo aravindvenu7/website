@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ORS — Occupancy Reward Shaping</title>
+  <meta name="description" content="Occupancy Reward Shaping: Improving Credit Assignment for Offline Goal-Conditioned RL. ICLR 2026.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="author" content="Aravind Venugopal">
+
+  <!-- Bootstrap -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Spartan:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <script src="https://kit.fontawesome.com/cf1c3caa39.js" crossorigin="anonymous"></script>
+
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body, {
+      delimiters: [
+        {left: '\\[', right: '\\]', display: true},
+        {left: '\\(', right: '\\)', display: false}
+      ]
+    });"></script>
+
+  <style>
+    html {
+      scroll-padding-top: 70px;
+    }
+
+    body {
+      font-family: 'Barlow', sans-serif;
+      font-weight: 300;
+      color: #111;
+      font-size: 17px;
+      background: #ffffff;
+    }
+
+    a {
+      color: #641e16;
+    }
+
+    a:hover {
+      color: #641e16;
+      text-decoration: none;
+      transition-duration: 0.3s;
+      transition-timing-function: linear;
+    }
+
+    .header {
+      font-size: 18pt;
+      color: #111;
+      font-weight: 400;
+      margin-bottom: 16px;
+      margin-top: 36px;
+    }
+
+    /* Sticky Nav */
+    #topnav {
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 100;
+      border-bottom: 1px solid #ddd;
+      padding: 12px 0;
+    }
+
+    #topnav .nav-inner {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    #topnav .back-link {
+      font-family: 'Barlow', sans-serif;
+      font-weight: 400;
+      font-size: 15px;
+      color: #641e16;
+    }
+
+    #topnav .nav-links a {
+      color: #888;
+      font-size: 14px;
+      margin-left: 16px;
+      font-family: 'Barlow', sans-serif;
+    }
+
+    #topnav .nav-links a:hover {
+      color: #111;
+    }
+
+    /* Main content */
+    .page-content {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    /* Hero */
+    .paper-title {
+      font-family: 'Barlow', sans-serif;
+      font-weight: 400;
+      font-size: 28px;
+      color: #111;
+      text-align: center;
+      margin-bottom: 18px;
+      line-height: 1.4;
+    }
+
+    .venue-badge {
+      display: inline-block;
+      background: #641e16;
+      color: white;
+      font-family: 'Barlow', sans-serif;
+      font-weight: 400;
+      font-size: 13px;
+      border-radius: 20px;
+      padding: 4px 14px;
+    }
+
+    .authors {
+      font-family: 'Barlow', sans-serif;
+      font-weight: 300;
+      font-size: 15px;
+      color: #111;
+      text-align: center;
+      margin-top: 14px;
+    }
+
+    .affiliations {
+      font-family: 'Barlow', sans-serif;
+      font-weight: 300;
+      font-size: 12px;
+      color: #888;
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    /* Link buttons */
+    .btn-paper {
+      border: 1px solid #641e16;
+      color: #641e16;
+      background: white;
+      border-radius: 20px;
+      padding: 6px 18px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 14px;
+      display: inline-block;
+      margin: 4px 6px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .btn-paper:hover {
+      background: #641e16;
+      color: white;
+      text-decoration: none;
+    }
+
+    .btn-paper.disabled {
+      opacity: 0.5;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    /* Section divider */
+    .section-divider {
+      border-top: 1px solid #ddd;
+      margin: 30px 0;
+    }
+
+    /* Subheadings */
+    .subheading {
+      font-family: 'Barlow', sans-serif;
+      font-weight: 400;
+      font-size: 15px;
+      color: #111;
+      margin-top: 24px;
+      margin-bottom: 10px;
+    }
+
+    /* Callout */
+    .callout {
+      border-left: 3px solid #641e16;
+      background: #fdf8f7;
+      padding: 14px 20px;
+      margin: 20px 0;
+      border-radius: 4px;
+      font-style: italic;
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    /* Proposition / Theorem box */
+    .prop-box {
+      border: 1px solid #ccc;
+      background: #f7f7f7;
+      padding: 16px 20px;
+      border-radius: 6px;
+      margin: 20px 0;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    /* Pipeline */
+    .pipeline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 24px 0;
+    }
+
+    .pipeline-box {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-size: 14px;
+      background: #fafafa;
+      font-family: 'Barlow', sans-serif;
+      font-weight: 300;
+      text-align: center;
+      min-width: 170px;
+    }
+
+    .pipeline-arrow {
+      color: #641e16;
+      font-size: 18px;
+      font-weight: 400;
+    }
+
+    @media (max-width: 600px) {
+      .pipeline {
+        flex-direction: column;
+      }
+      .pipeline-arrow {
+        transform: rotate(90deg);
+      }
+    }
+
+    /* Figure placeholder */
+    .fig-placeholder {
+      background: #f5f5f5;
+      border: 1px dashed #ccc;
+      border-radius: 6px;
+      padding: 40px 20px;
+      text-align: center;
+      color: #888;
+      font-size: 14px;
+      margin: 20px auto;
+      max-width: 100%;
+    }
+
+    .fig-caption {
+      text-align: center;
+      font-size: 13px;
+      color: #888;
+      margin-top: 8px;
+      font-style: italic;
+    }
+
+    /* Tables */
+    .table-wrapper {
+      overflow-x: auto;
+      margin: 16px 0;
+    }
+
+    table.results-table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 15px;
+    }
+
+    table.results-table th {
+      background: #f0f0f0;
+      border: 1px solid #ddd;
+      padding: 8px 14px;
+      font-weight: 400;
+    }
+
+    table.results-table td {
+      border: 1px solid #ddd;
+      padding: 8px 14px;
+    }
+
+    table.results-table .ors-row td {
+      color: #641e16;
+      font-weight: 700;
+    }
+
+    /* BibTeX block */
+    .bibtex-wrapper {
+      position: relative;
+    }
+
+    pre#bibtex-content {
+      background: #1e1e1e;
+      color: #f0f0f0;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      padding: 20px;
+      border-radius: 6px;
+      overflow-x: auto;
+      position: relative;
+      margin: 0;
+    }
+
+    #copy-bib {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: transparent;
+      border: 1px solid #641e16;
+      color: #f0f0f0;
+      border-radius: 4px;
+      padding: 3px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: 'Barlow', sans-serif;
+    }
+
+    #copy-bib:hover {
+      background: #641e16;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Top Navigation -->
+  <nav id="topnav">
+    <div class="nav-inner">
+      <a class="back-link" href="../">&#8592; Aravind Venugopal</a>
+      <div class="nav-links">
+        <a href="https://openreview.net/forum?id=EW8DskWQ1K" target="_blank" rel="noopener noreferrer">Paper</a>
+        <a href="#" title="Coming soon" style="cursor:default; pointer-events:none;">Code</a>
+        <a href="#" title="Coming soon" style="cursor:default; pointer-events:none;">Slides</a>
+        <a href="#citation">BibTeX&#8595;</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="page-content">
+
+    <!-- Hero -->
+    <div class="text-center mb-3">
+      <h1 class="paper-title">Occupancy Reward Shaping: Improving Credit Assignment for Offline Goal-Conditioned RL</h1>
+      <div>
+        <span class="venue-badge">ICLR 2026</span>
+      </div>
+      <div class="authors mt-3">
+        <u>Aravind Venugopal</u>¹, Jiayu Chen², Xudong Wu², Chongyi Zheng³, Benjamin Eysenbach³, Jeff Schneider¹
+      </div>
+      <div class="affiliations">
+        ¹ Carnegie Mellon University &nbsp;·&nbsp; ² The Chinese University of Hong Kong &nbsp;·&nbsp; ³ Princeton University
+      </div>
+      <div style="margin-top: 20px;">
+        <a class="btn-paper" href="https://openreview.net/forum?id=EW8DskWQ1K" target="_blank" rel="noopener noreferrer">📄 Paper</a>
+        <a class="btn-paper disabled" href="#" title="Coming soon">💻 Code</a>
+        <a class="btn-paper disabled" href="#" title="Coming soon">🖼 Slides</a>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Abstract -->
+    <div>
+      <div class="header">Abstract</div>
+      <p style="font-size: 16px; line-height: 1.7; max-width: 800px;">
+        Offline Goal-Conditioned Reinforcement Learning (GCRL) trains policies to reach goals using static datasets and simple sparse rewards \(r(s) = \mathbf{1}\{s = g\}\). While elegant and domain-agnostic, sparse rewards create a fundamental <strong>credit assignment problem</strong>: value functions become noisy and policies fail to generalize.
+      </p>
+      <p style="font-size: 16px; line-height: 1.7; max-width: 800px;">
+        We observe that <strong>generative world models — specifically, flow-matching occupancy models — implicitly encode the temporal geometry of the state space</strong>, capturing which future states lead toward a goal. We formalize this: the Wasserstein-2 distance between a goal point-mass and the learned occupancy measure is <em>monotonically decreasing</em> in shortest-path distance to the goal.
+      </p>
+      <p style="font-size: 16px; line-height: 1.7; max-width: 800px;">
+        We introduce <strong>Occupancy Reward Shaping (ORS)</strong>: a method that extracts goal-reaching information from the occupancy model as a reward-shaping term \(r^W(s,a,g)\), computable <em>without</em> ODE integration. ORS provably preserves the optimal, shortest-path policy. On <strong>13 sparse-reward robotics tasks</strong> (OGBench) and <strong>3 real-world tokamak plasma control tasks</strong>, ORS achieves <strong>23%–217% improvements</strong> over competitive baselines.
+      </p>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Overview -->
+    <div>
+      <div class="header">Overview</div>
+
+      <div class="subheading">The Credit Assignment Problem</div>
+      <p style="font-size: 16px; line-height: 1.7;">
+        Standard GCRL uses reward \(r(s) = \mathbf{1}\{s=g\}\) — non-zero only at the goal. This triggers a cascade: sparse rewards → noisy value functions → bad policies → ineffective GCRL. Prior reward shaping methods either require per-task manual design or rely on local classifiers that miss long-range temporal structure.
+      </p>
+
+      <div class="callout">
+        <em>How do we learn reward functions for credit assignment that accurately capture long-term temporal dependencies and goal-reaching information present in offline data?</em>
+      </div>
+
+      <div class="subheading">World Models Capture Temporal Geometry</div>
+      <p style="font-size: 16px; line-height: 1.7;">
+        A <em>discounted occupancy model</em> \(d^\pi(s^+ \mid s, a)\) aggregates all future states reachable from \((s,a)\) under policy \(\pi\), weighted by temporal distance. States near goal \(g\) have occupancies that concentrate around \(g\); states far away have diffuse, spread-out occupancies. This geometric structure is exactly what credit assignment needs — and it emerges for free from the world model.
+      </p>
+
+      <div class="fig-placeholder" role="img" aria-label="Occupancy model diagram: robot figure at s_t with arrows through faded silhouettes toward goal g, showing future state distribution">
+        <strong>Figure:</strong> Occupancy model future-state distribution diagram<br>
+        <span style="font-size:12px;">[Figure: robot at s_t → ghosted silhouettes → goal g, colored by temporal distance]</span>
+      </div>
+      <p class="fig-caption">
+        <em>The occupancy model predicts the future state distribution from any (s, a) pair, implicitly encoding proximity to the goal.</em>
+      </p>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Method -->
+    <div>
+      <div class="header">Method</div>
+
+      <div class="pipeline">
+        <div class="pipeline-box">Learn flow-matching<br>occupancy model</div>
+        <div class="pipeline-arrow">&rsaquo;&rsaquo;&rsaquo;</div>
+        <div class="pipeline-box">Extract occupancy-<br>shaped rewards</div>
+        <div class="pipeline-arrow">&rsaquo;&rsaquo;&rsaquo;</div>
+        <div class="pipeline-box">Downstream GCRL</div>
+      </div>
+
+      <div class="subheading">Learning the Occupancy Model</div>
+      <p style="font-size: 16px; line-height: 1.7;">
+        The discounted occupancy measure is:
+      </p>
+      \[
+        d^\pi(s^+ \mid s, a) = (1 - \gamma) \sum_{\Delta t=1}^{\infty} \gamma^{\Delta t - 1} \mathbb{P}(s_{t + \Delta t} = s^+ \mid s, a, \pi)
+      \]
+      <p style="font-size: 16px; line-height: 1.7;">
+        Analogous to SARSA bootstrapping \(Q(s,a) = r(s,a,s') + \gamma Q(s',a')\), we bootstrap occupancy learning over offline data \(\mathcal{D}\):
+      </p>
+      \[
+        d_\theta^{\pi_\mathcal{D}}(s^+ \mid s, a) = (1-\gamma) p(s' \mid s, a) + \gamma d_{\theta^-}^{\pi_\mathcal{D}}(s^+ \mid s', a'); \quad \forall (s, a, s', a') \in \mathcal{D}
+      \]
+      <p style="font-size: 16px; line-height: 1.7;">
+        We parameterize the occupancy model using <strong>flow matching</strong> [Farebrother et al., 2025], learning a velocity field \(v_\theta(t, s, a, x_t)\):
+      </p>
+      \[
+        \mathcal{L}_{\text{flow}}(\theta) = (1-\gamma)\mathcal{L}_{\text{next}} + \gamma \mathcal{L}_{\text{future}}
+      \]
+      <p style="font-size: 16px; line-height: 1.7;">
+        where \(\mathcal{L}_{\text{next}}\) matches the immediate next state and \(\mathcal{L}_{\text{future}}\) bootstraps long-horizon occupancy with a target network.
+      </p>
+
+      <div class="subheading">Occupancy Models Encode State-Space Geometry</div>
+
+      <div class="prop-box">
+        <strong>Proposition 1</strong> <em>(Informal).</em> Under assumptions on goal reachability, dynamics, and dataset quality, for any \((s, a, g)\), the expected \(W_2^2\) distance \(\mathbb{E}_{a \sim \pi_\mathcal{D}}[W_2^2(\delta_g, d^{\pi_\mathcal{D}}(s^+ \mid s, a))]\) is monotonically decreasing in shortest-path distance to goal \(g\). Moreover:
+        \[
+          W_2^2(\delta_g, d^{\pi_\mathcal{D}}(s^+ \mid s, a^*)) \leq W_2^2(\delta_g, d^{\pi_\mathcal{D}}(s^+ \mid s, a))
+        \]
+        <em>where \(a^* \sim \pi^*(\cdot \mid s, g)\).</em>
+      </div>
+
+      <p style="font-size: 16px; line-height: 1.7;">
+        <strong>Intuition</strong>: States closer to goal \(g\) occupy inner level-set layers (layer \(k_0\)) around \(g\), while distant states lie in outer layers (\(k_1, k_2, k_3\ldots\)). The \(W_2^2\) distance grows monotonically with layer index \(k\) — making it a natural dense credit signal.
+      </p>
+
+      <div class="subheading">Extracting Goal-Reaching Information (Without Solving an ODE)</div>
+      <p style="font-size: 16px; line-height: 1.7;">
+        The flow-matching loss provides a tractable upper bound on \(W_2^2\) [Haviv et al., 2025; Lv et al., 2025; Park et al., 2025]:
+      </p>
+      \[
+        W_2^2(\delta_g, d^{\pi_\mathcal{D}}(s^+ \mid s, a)) \leq \mathbb{E}_{\substack{x_1 = g,\, x_0 \sim \mathcal{N}(0, I) \\ t \sim \mathcal{U}(0,1)}} \left[\| v_\theta(t, s, a, x_t) - (x_1 - x_0) \|_2^2 \right]
+      \]
+      <p style="font-size: 16px; line-height: 1.7;">
+        The <strong>ORS reward</strong> \(r^W(s,a,g)\) is learned by regressing this flow-matching loss:
+      </p>
+      \[
+        \mathcal{L}_{\text{rew}}(\psi) = \mathbb{E}_{s,a,g \sim \mathcal{D}} \left\| r^W_\psi(s,a,g) + \mathbb{E}_{\substack{x_1=g,\, x_0 \sim \mathcal{N}(0,I) \\ t \sim \mathcal{U}([0,1])}} \|v_\theta(t,s,a,x_t) - (x_1-x_0)\|_2^2 \right\|_2^2
+      \]
+
+      <div class="prop-box">
+        <strong>Theorem</strong> <em>(Policy Optimality).</em> <em>Under assumptions on goal reachability, dynamics, and dataset quality, for any \((s,g)\), the greedy policy \(\pi^{\text{greedy}}(a \mid s,g)\) with respect to \(Q^*(s,a,g)\) computed under \(r^W(s,a,g)\) is optimal and reaches \(g\) in the minimum number of steps.</em>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Experiments -->
+    <div>
+      <div class="header">Experiments</div>
+
+      <div class="subheading">Benchmarks</div>
+      <ul style="font-size: 16px; line-height: 1.9;">
+        <li><strong>OGBench</strong> [Park et al., 2025]: 13 sparse-reward tasks across 4 domains — <code>antmaze</code>, <code>cube</code>, <code>scene</code>, <code>puzzle</code> — with both "play" (clean) and "noisy" dataset variants.</li>
+        <li><strong>Tokamak plasma control</strong>: 3 real-world-motivated continuous control tasks (\(\beta_N\) Tracking, Density Tracking, Rotation Tracking) on a nuclear fusion reactor simulator.</li>
+      </ul>
+
+      <div class="subheading">Main Results — OGBench</div>
+      <p style="font-size: 16px; line-height: 1.7;">
+        ORS achieves a <strong>mean success rate of 44.2%</strong>, outperforming all baselines.
+      </p>
+      <div class="table-wrapper">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Mean Success Rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>GCBC</td><td>2.5</td></tr>
+            <tr><td>GC-IVL</td><td>15.9</td></tr>
+            <tr><td>QRL</td><td>6.9</td></tr>
+            <tr><td>CRL</td><td>13.7</td></tr>
+            <tr><td>GC-IQL</td><td>20.0</td></tr>
+            <tr><td>HIQL</td><td>20.0</td></tr>
+            <tr><td>SAW</td><td>25.8</td></tr>
+            <tr><td>n-step returns</td><td>12.7</td></tr>
+            <tr><td>GCIQL-O</td><td>23.2</td></tr>
+            <tr><td>Go-Fresh</td><td>35.8</td></tr>
+            <tr class="ors-row"><td><strong>ORS (ours)</strong></td><td><strong>44.2</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="subheading">Real-World Results — Tokamak Plasma Control</div>
+      <div class="table-wrapper">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Best Baseline</th>
+              <th>ORS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>\(\beta_N\) Tracking</td><td>−44.76 ± 8.42</td><td><strong>−44.76 ± 8.42</strong></td></tr>
+            <tr><td>Density Tracking</td><td>−25.6 ± 4.1</td><td><strong>−26.9 ± 6.6</strong></td></tr>
+            <tr><td>Rotation Tracking</td><td>−22.4 ± 0.3</td><td><strong>−22.4 ± 0.6</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size: 14px; color: #888; margin-top: 6px;">(Lower tracking error is better.)</p>
+
+      <div class="subheading">Credit Assignment Analysis</div>
+
+      <div class="fig-placeholder" role="img" aria-label="Two-panel figure: left panel shows ORS reward heatmap on antmaze-giant maze, right panel shows value noise vs non-monotone transition fraction comparing ORS vs sparse rewards">
+        <strong>Figure:</strong> Credit assignment analysis<br>
+        <span style="font-size:12px;">[Left: ORS reward heatmap on Antmaze Giant — yellow/green along optimal path. Right: ORS rewards maintain monotone value functions under high noise (low δ_V) compared to sparse rewards.]</span>
+      </div>
+      <p class="fig-caption">
+        <em>Left: ORS assigns higher rewards to states along goal-directed trajectories. Right: As a critic, ORS rewards maintain monotone value functions (low \(\delta_V\)) even under high noise — confirming improved credit assignment.</em>
+      </p>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Limitations -->
+    <div>
+      <div class="header">Limitations &amp; Future Work</div>
+
+      <div class="subheading">Limitations</div>
+      <ul style="font-size: 16px; line-height: 1.9;">
+        <li>Underperforms on highly <strong>combinatorial tasks</strong> (e.g., <code>puzzle-4x6</code>) where occupancy measures struggle with discrete object permutations.</li>
+        <li><strong>Computationally heavy</strong> for online RL due to occupancy model pretraining.</li>
+      </ul>
+
+      <div class="subheading">Future Work</div>
+      <ul style="font-size: 16px; line-height: 1.9;">
+        <li>Improve computational efficiency of occupancy learning.</li>
+        <li>Occupancy learning over <strong>filtered future states</strong> to reduce irrelevant signal.</li>
+        <li>Scale to <strong>VLA-size policy learning</strong> for robotics foundation models.</li>
+      </ul>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Citation -->
+    <div id="citation">
+      <div class="header">Citation</div>
+      <p style="font-size: 16px;">If you find this work useful, please cite:</p>
+      <div class="bibtex-wrapper">
+        <pre id="bibtex-content">@inproceedings{venugopal2026ors,
+  title     = {Occupancy Reward Shaping: Improving Credit Assignment
+               for Offline Goal-Conditioned RL},
+  author    = {Aravind Venugopal and Jiayu Chen and Xudong Wu and
+               Chongyi Zheng and Benjamin Eysenbach and Jeff Schneider},
+  booktitle = {International Conference on Learning Representations},
+  year      = {2026},
+  url       = {https://openreview.net/forum?id=EW8DskWQ1K}
+}</pre>
+        <button id="copy-bib">Copy</button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center; padding: 40px 0 20px; font-size: 12px; color: #888; border-top: 1px solid #ddd; margin-top: 40px;">
+      Aravind Venugopal · Carnegie Mellon University · 2026 ·
+      <a href="https://openreview.net/forum?id=EW8DskWQ1K" target="_blank" rel="noopener noreferrer">Paper</a>
+    </div>
+
+  </div><!-- /page-content -->
+
+  <script>
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        const target = document.querySelector(a.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+
+    // BibTeX copy button
+    document.getElementById('copy-bib').addEventListener('click', function() {
+      navigator.clipboard.writeText(document.getElementById('bibtex-content').innerText);
+      this.textContent = 'Copied \u2713';
+      setTimeout(() => this.textContent = 'Copy', 2000);
+    });
+  </script>
+
+</body>
+</html>
