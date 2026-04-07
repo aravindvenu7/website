@@ -519,7 +519,7 @@
       <div class="header">Method</div>
 
       <div style="text-align:center; margin: 20px 0;">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 220" style="width:100%; max-width:760px; display:inline-block;" aria-label="Pipeline: Learn flow-matching occupancy model → Extracted occupancy-shaped rewards → Use for downstream GCRL">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 220" style="width:100%; max-width:580px; display:inline-block;" aria-label="Pipeline: Learn flow-matching occupancy model → Extracted occupancy-shaped rewards → Use for downstream GCRL">
           <!-- Circle 1 -->
           <circle cx="120" cy="110" r="108" fill="white" stroke="#222" stroke-width="1.5"/>
           <path d="M 42 55 A 88 88 0 0 1 198 55" fill="none" stroke="#bbb" stroke-width="1"/>
@@ -548,48 +548,35 @@
         </svg>
       </div>
 
-      <div class="subheading"><strong>Learning the Occupancy Model</strong></div>
-      <p style="font-size: 16px; line-height: 1.7;">
-        The discounted occupancy measure is:
-      </p>
-      \[
-        d^\pi(s^+ \mid s, a) = (1 - \gamma) \sum_{\Delta t=1}^{\infty} \gamma^{\Delta t - 1} \mathbb{P}(s_{t + \Delta t} = s^+ \mid s, a, \pi)
-      \]
-      <p style="font-size: 16px; line-height: 1.7;">
-        Analogous to SARSA bootstrapping \(Q(s,a) = r(s,a,s') + \gamma Q(s',a')\), we bootstrap occupancy learning over offline data \(\mathcal{D}\):
-      </p>
-      \[
-        d_\theta^{\pi_\mathcal{D}}(s^+ \mid s, a) = (1-\gamma) p(s' \mid s, a) + \gamma d_{\theta^-}^{\pi_\mathcal{D}}(s^+ \mid s', a'); \quad \forall (s, a, s', a') \in \mathcal{D}
-      \]
-      <p style="font-size: 16px; line-height: 1.7;">
-        We parameterize the occupancy model using <strong>flow matching</strong> [Farebrother et al., 2025], learning a velocity field \(v_\theta(t, s, a, x_t)\):
-      </p>
-      \[
-        \mathcal{L}_{\text{flow}}(\theta) = (1-\gamma)\mathcal{L}_{\text{next}} + \gamma \mathcal{L}_{\text{future}}
-      \]
-      <p style="font-size: 16px; line-height: 1.7;">
-        where \(\mathcal{L}_{\text{next}}\) matches the immediate next state and \(\mathcal{L}_{\text{future}}\) bootstraps long-horizon occupancy with a target network.
-      </p>
-
-      <div class="subheading"><strong>Occupancy Models Encode State-Space Geometry</strong></div>
-
-      <p style="font-size: 16px; line-height: 1.7;">
-        <strong>Intuition</strong>: States closer to goal \(g\) occupy inner level-set layers (layer \(k_0\)) around \(g\), while distant states lie in outer layers (\(k_1, k_2, k_3\ldots\)). The \(W_2^2\) distance grows monotonically with layer index \(k\) — making it a natural dense credit signal.
-      </p>
-
-      <div class="subheading"><strong>Extracting Goal-Reaching Information (Without Solving an ODE)</strong></div>
-      <p style="font-size: 16px; line-height: 1.7;">
-        The flow-matching loss provides a tractable upper bound on \(W_2^2\) [Haviv et al., 2025; Lv et al., 2025; Park et al., 2025]:
-      </p>
-      \[
-        W_2^2(\delta_g, d^{\pi_\mathcal{D}}(s^+ \mid s, a)) \leq \mathbb{E}_{\substack{x_1 = g,\, x_0 \sim \mathcal{N}(0, I) \\ t \sim \mathcal{U}(0,1)}} \left[\| v_\theta(t, s, a, x_t) - (x_1 - x_0) \|_2^2 \right]
-      \]
-      <p style="font-size: 16px; line-height: 1.7;">
-        The <strong>ORS reward</strong> \(r^W(s,a,g)\) is learned by regressing this flow-matching loss:
-      </p>
-      \[
-        \mathcal{L}_{\text{rew}}(\psi) = \mathbb{E}_{s,a,g \sim \mathcal{D}} \left\| r^W_\psi(s,a,g) + \mathbb{E}_{\substack{x_1=g,\, x_0 \sim \mathcal{N}(0,I) \\ t \sim \mathcal{U}([0,1])}} \|v_\theta(t,s,a,x_t) - (x_1-x_0)\|_2^2 \right\|_2^2
-      \]
+      <ol style="font-size: 16px; line-height: 1.7; padding-left: 22px; margin: 24px 0 0;">
+        <li style="margin-bottom: 20px;">
+          <strong>Learning the Occupancy Model</strong>
+          <ul style="margin-top: 10px; padding-left: 20px;">
+            <li style="margin-bottom: 10px;">The discounted occupancy measure \(d^\pi(s^+ \mid s, a)\) aggregates future states reachable from \((s,a)\) under policy \(\pi\), weighted by temporal distance:
+              \[ d^\pi(s^+ \mid s, a) = (1 - \gamma) \sum_{\Delta t=1}^{\infty} \gamma^{\Delta t - 1} \mathbb{P}(s_{t + \Delta t} = s^+ \mid s, a, \pi) \]
+            </li>
+            <li style="margin-bottom: 10px;">Analogous to SARSA bootstrapping \(Q(s,a) = r(s,a,s') + \gamma Q(s',a')\), we bootstrap occupancy learning over offline data \(\mathcal{D}\):
+              \[ d_\theta^{\pi_\mathcal{D}}(s^+ \mid s, a) = (1-\gamma)\, p(s' \mid s, a) + \gamma\, d_{\theta^-}^{\pi_\mathcal{D}}(s^+ \mid s', a'); \quad \forall (s, a, s', a') \in \mathcal{D} \]
+            </li>
+            <li style="margin-bottom: 0;">We parameterize the occupancy model using <strong>flow matching</strong> [Farebrother et al., 2025], learning a velocity field \(v_\theta(t, s, a, x_t)\) with loss \(\mathcal{L}_{\text{flow}}(\theta) = (1-\gamma)\mathcal{L}_{\text{next}} + \gamma \mathcal{L}_{\text{future}}\), where \(\mathcal{L}_{\text{next}}\) matches the immediate next state and \(\mathcal{L}_{\text{future}}\) bootstraps long-horizon occupancy with a target network.</li>
+          </ul>
+        </li>
+        <li style="margin-bottom: 20px;">
+          <strong>Extracting Goal-Reaching Information (Without Solving an ODE)</strong>
+          <ul style="margin-top: 10px; padding-left: 20px;">
+            <li style="margin-bottom: 10px;">States closer to goal \(g\) occupy inner level-set layers around \(g\), while distant states lie in outer layers. The \(W_2^2\) distance grows monotonically with distance to goal — making it a natural dense credit signal.</li>
+            <li style="margin-bottom: 10px;">The flow-matching loss provides a tractable upper bound on \(W_2^2\) [Haviv et al., 2025; Lv et al., 2025; Park et al., 2025], computable without ODE integration:
+              \[ W_2^2(\delta_g, d^{\pi_\mathcal{D}}(s^+ \mid s, a)) \leq \mathbb{E}_{\substack{x_1 = g,\, x_0 \sim \mathcal{N}(0, I) \\ t \sim \mathcal{U}(0,1)}} \left[\| v_\theta(t, s, a, x_t) - (x_1 - x_0) \|_2^2 \right] \]
+            </li>
+            <li style="margin-bottom: 0;">The <strong>ORS reward</strong> \(r^W(s,a,g)\) is learned by regressing this flow-matching loss:
+              \[ \mathcal{L}_{\text{rew}}(\psi) = \mathbb{E}_{s,a,g \sim \mathcal{D}} \left\| r^W_\psi(s,a,g) + \mathbb{E}_{\substack{x_1=g,\, x_0 \sim \mathcal{N}(0,I) \\ t \sim \mathcal{U}([0,1])}} \|v_\theta(t,s,a,x_t) - (x_1-x_0)\|_2^2 \right\|_2^2 \]
+            </li>
+          </ul>
+        </li>
+        <li>
+          <strong>Use for Downstream GCRL</strong>: The ORS rewards are used to train policies for any downstream goal-reaching task, agnostic of the RL algorithm.
+        </li>
+      </ol>
 
     </div>
 
