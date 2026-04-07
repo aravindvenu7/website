@@ -505,7 +505,7 @@
         </div>
         <ul style="font-size: 16px; line-height: 1.8; padding-left: 20px; margin: 0;">
           <li style="margin-bottom: 14px;">Offline goal-conditioned RL with sparse rewards suffers from a <strong>credit assignment problem</strong>. This triggers a cascade: sparse rewards → noisy value functions → bad policies → ineffective GCRL. Prior reward shaping methods either require per-task manual reward design or rely on graph-building methods that don't scale with task complexity.</li>
-          <li style="margin-bottom: 14px;">We observe that <strong>generative world models — specifically, flow-matching models of the occupancy measure — implicitly encode the temporal geometry of the state space</strong>, capturing which future states lead toward a goal.</li>
+          <li style="margin-bottom: 14px;">We hypothesize that <strong>generative world models — specifically, flow-matching models of the occupancy measure — implicitly encode the temporal geometry of the state space</strong>, capturing which future states lead toward a goal.</li>
           <li style="margin-bottom: 14px;">We formalize how such models encode temporal geometry and propose <strong>Occupancy Reward Shaping (ORS)</strong>: a method that extracts goal-reaching information from the occupancy model as a reward-shaping term \(r^W(s,a,g)\) while preserving the optimal policy.</li>
           <li style="margin-bottom: 0;">On <strong>13 sparse-reward robotics tasks</strong> (OGBench), ORS achieves <strong>23%–217% improvements</strong> over competitive baselines.</li>
         </ul>
