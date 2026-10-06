@@ -258,7 +258,7 @@
       var vals = groups[i].vals;
       var hi = opts.max || Math.max.apply(null, vals.map(function (d) { return d.v + (d.ci || 0); }));
       var lo = Math.min(0, Math.min.apply(null, vals.map(function (d) { return d.v; })));
-      hi = hi <= 1 ? Math.max(hi, 0.7) : Math.max(10, Math.ceil(hi / 10) * 10);
+      hi = hi <= 1 ? 1 : 100;
       function y(v) { return M.t + ph - (v - lo) / (hi - lo) * ph; }
       while (gridG.firstChild) gridG.removeChild(gridG.firstChild);
       var step = hi <= 1 ? 0.2 : hi <= 50 ? 10 : 20;
