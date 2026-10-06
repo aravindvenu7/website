@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GTSE — Geometric Time Score Estimators</title>
+  <meta name="description" content="Geometric Time Score Estimators: Bridging Self-Predictive Representations and Generative Occupancy Models For Reinforcement Learning.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="author" content="Aravind Venugopal">
+
+  <!-- Bootstrap -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400&display=swap" rel="stylesheet">
+
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body, {
+      delimiters: [
+        {left: '\\[', right: '\\]', display: true},
+        {left: '\\(', right: '\\)', display: false}
+      ]
+    });"></script>
+
+  <style>
+    html { scroll-padding-top: 70px; }
+
+    body {
+      font-family: 'Barlow', sans-serif;
+      font-weight: 300;
+      color: #111;
+      font-size: 17px;
+      background: #ffffff;
+    }
+
+    a { color: #641e16; }
+
+    a:hover {
+      color: #641e16;
+      text-decoration: none;
+      transition-duration: 0.3s;
+      transition-timing-function: linear;
+    }
+
+    .header {
+      font-size: 18pt;
+      color: #111;
+      font-weight: 700;
+      margin-bottom: 16px;
+      margin-top: 56px;
+    }
+
+    /* Sticky Nav */
+    #topnav {
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 100;
+      border-bottom: 1px solid #ddd;
+      padding: 12px 0;
+    }
+
+    #topnav .nav-inner {
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    #topnav .back-link { font-weight: 400; font-size: 15px; color: #641e16; }
+    #topnav .nav-links a { color: #888; font-size: 14px; margin-left: 16px; }
+    #topnav .nav-links a:hover { color: #111; }
+
+    /* Main content */
+    .page-content { max-width: 1060px; margin: 0 auto; padding: 40px 20px; }
+
+    /* Hero */
+    .paper-title {
+      font-weight: 400;
+      font-size: 28px;
+      color: #111;
+      text-align: center;
+      margin-bottom: 18px;
+      line-height: 1.4;
+    }
+
+    .venue-badge {
+      display: inline-block;
+      background: #641e16;
+      color: white;
+      font-weight: 400;
+      font-size: 13px;
+      border-radius: 20px;
+      padding: 4px 14px;
+    }
+
+    .authors { font-size: 15px; color: #111; text-align: center; margin-top: 14px; }
+    .affiliations { font-size: 12px; color: #888; text-align: center; margin-top: 8px; }
+
+    /* Link buttons */
+    .btn-paper {
+      border: 1px solid #641e16;
+      color: #641e16;
+      background: white;
+      border-radius: 20px;
+      padding: 6px 18px;
+      font-size: 14px;
+      display: inline-block;
+      margin: 4px 6px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .btn-paper:hover { background: #641e16; color: white; text-decoration: none; }
+    .btn-paper.disabled { opacity: 0.5; cursor: default; pointer-events: none; }
+
+    .section-divider { border-top: 1px solid #ddd; margin: 30px 0; }
+
+    .subheading { font-weight: 400; font-size: 17px; color: #111; margin-top: 32px; margin-bottom: 10px; }
+
+    /* Callout */
+    .callout {
+      border: 3px solid #641e16;
+      background: #fdf8f7;
+      padding: 14px 20px;
+      margin: 20px 0;
+      border-radius: 4px;
+      font-style: italic;
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    /* Objective box */
+    .prop-box {
+      border: 1px solid #ccc;
+      background: #f7f7f7;
+      padding: 16px 20px;
+      border-radius: 6px;
+      margin: 16px 0;
+      font-size: 15px;
+      line-height: 1.7;
+      overflow-x: auto;
+    }
+
+    .fig-caption { text-align: center; font-size: 15px; color: #111; margin-top: 8px; font-style: italic; }
+
+    /* Booktabs-style results table */
+    table.bt-table { border-collapse: collapse; width: 100%; font-size: 13px; font-weight: 300; }
+
+    table.bt-table thead th {
+      padding: 4px 7px;
+      text-align: center;
+      font-weight: 500;
+      border: none;
+      white-space: nowrap;
+    }
+
+    table.bt-table thead tr:first-child th { border-top: 2px solid #111; padding-top: 6px; }
+    table.bt-table thead tr:last-child th { border-bottom: 1px solid #555; padding-bottom: 6px; }
+    table.bt-table thead th:first-child { text-align: left; }
+
+    table.bt-table tbody td {
+      padding: 3px 7px;
+      text-align: center;
+      border: none;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+
+    table.bt-table tbody td:first-child { text-align: left; font-size: 13px; }
+    table.bt-table tbody tr.bt-mean td { border-top: 1px solid #555; border-bottom: 2px solid #111; font-weight: 500; padding-top: 5px; padding-bottom: 6px; }
+    table.bt-table .bt-ours { color: #c0392b; }
+    table.bt-table .bt-ours-mean { color: #c0392b; font-weight: 700; }
+
+    /* BibTeX block */
+    .bibtex-wrapper { position: relative; }
+
+    pre#bibtex-content {
+      background: #1e1e1e;
+      color: #f0f0f0;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      padding: 20px;
+      border-radius: 6px;
+      overflow-x: auto;
+      position: relative;
+      margin: 0;
+    }
+
+    #copy-bib {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: transparent;
+      border: 1px solid #641e16;
+      color: #f0f0f0;
+      border-radius: 4px;
+      padding: 3px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: 'Barlow', sans-serif;
+    }
+
+    #copy-bib:hover { background: #641e16; }
+
+    /* Interactive visualizations */
+    .viz-card { border: 1px solid #e3e3e3; border-radius: 8px; padding: 16px; margin: 16px 0 8px; background: #fcfcfc; }
+    .ts-panels { display: flex; gap: 12px; }
+    .ts-panels > div { flex: 1; min-width: 0; }
+    .ts-svg { width: 100%; display: block; touch-action: none; user-select: none; }
+    #ts-density .ts-svg { cursor: crosshair; }
+    #ts-score .ts-svg { cursor: ew-resize; }
+    .ts-tick { font-size: 11px; fill: #999; font-family: 'Barlow', sans-serif; }
+    .ts-axis { font-size: 12px; fill: #777; font-family: 'Barlow', sans-serif; }
+    .ts-klab { font-size: 13px; fill: #111; font-family: 'Barlow', sans-serif; dominant-baseline: hanging; }
+    .ts-glab { font-size: 12px; fill: #c0392b; font-weight: 500; font-family: 'Barlow', sans-serif; }
+    .ts-drag { cursor: grab; }
+    .ts-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; margin-top: 12px; font-size: 14px; }
+    .ts-controls label { display: flex; align-items: center; gap: 8px; margin: 0; }
+    .ts-controls input[type=range] { width: 130px; accent-color: #641e16; }
+    .ts-num { font-variant-numeric: tabular-nums; min-width: 34px; color: #641e16; }
+    .ts-btn { background: white; border: 1px solid #641e16; color: #641e16; border-radius: 4px; padding: 3px 14px; font-size: 13px; cursor: pointer; }
+    .ts-btn:hover { background: #641e16; color: white; }
+    .ts-readout { display: flex; flex-wrap: wrap; gap: 6px 24px; margin-top: 10px; font-size: 14px; color: #444; }
+    .ts-readout b { color: #641e16; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+    .chart { margin: 18px 0 4px; }
+    .bar-svg { width: 100%; display: block; }
+    .bar-item { transition: opacity .18s ease; cursor: default; }
+    .bar-item rect { transition: y .35s ease, height .35s ease; }
+    .bar-val { font-size: 11px; fill: #555; font-family: 'Barlow', sans-serif; }
+    .bar-lab { font-size: 12px; fill: #555; font-family: 'Barlow', sans-serif; }
+    .bar-lab.ours { fill: #641e16; font-weight: 500; }
+
+    .seg-toggle { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 6px; }
+    .seg-btn { border: 1px solid #ddd; background: white; color: #555; border-radius: 999px; padding: 3px 12px; font-size: 13px; cursor: pointer; font-family: 'Barlow', sans-serif; }
+    .seg-btn:hover { border-color: #641e16; color: #641e16; }
+    .seg-btn.is-active { background: #641e16; border-color: #641e16; color: white; }
+
+    table.bt-table td, table.bt-table th { transition: background .18s ease, opacity .18s ease; }
+    table.bt-table tbody tr { cursor: pointer; }
+    table.bt-table tr.row-active td { background: #fdf3f1; }
+    table.bt-table .col-hot { background: #f6e6e3 !important; }
+    table.bt-table .col-dim { opacity: 0.35; }
+
+    @media (max-width: 700px) {
+      .float-fig { float: none !important; width: 100% !important; margin: 0 0 16px !important; }
+      .two-up, .ts-panels { flex-direction: column; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Top Navigation -->
+  <nav id="topnav">
+    <div class="nav-inner">
+      <a class="back-link" href="../">&#8592; Aravind Venugopal</a>
+      <div class="nav-links">
+        <a href="#" class="disabled">Paper</a>
+        <a href="#" class="disabled">Code</a>
+        <a href="#citation">BibTeX&#8595;</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-content">
+
+    <!-- Hero -->
+    <div class="text-center mb-3">
+      <h1 class="paper-title">Geometric Time Score Estimators: Bridging Self-Predictive Representations and Generative Occupancy Models for Reinforcement Learning</h1>
+      <div>
+        <span class="venue-badge">Preprint</span>
+      </div>
+      <!-- TODO: fill in authors and affiliations -->
+      <div class="authors mt-3">
+        Aravind Venugopal¹, [co-authors]
+      </div>
+      <div class="affiliations">
+        ¹ Carnegie Mellon University
+      </div>
+      <div style="margin-top: 20px;">
+        <!-- TODO: add paper and code links, then remove "disabled" -->
+        <a class="btn-paper disabled" href="#" target="_blank" rel="noopener noreferrer">📄 Paper</a>
+        <a class="btn-paper disabled" href="#" target="_blank" rel="noopener noreferrer">💻 Code</a>
+      </div>
+    </div>
+
+    <div class="callout" style="margin: 28px 0 0;">
+      <em>Can occupancy density estimation along probability paths bridge the gap between self-predictive representations and generative occupancy models?</em>
+    </div>
+
+    <!-- Main figure -->
+    <div style="margin: 28px 0 0;">
+      <img src="main_figure.png" alt="GTSE: time score along a probability path from N(0, I) to the occupancy measure" style="width:100%; display:block;">
+      <p class="fig-caption">The time score \(\partial_k \log p_k(g^+ \mid s, a)\) captures the instantaneous rate of change of the log-density of the occupancy measure along a probability path. Integrating it gives accurate occupancy density estimates for downstream control.</p>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Overview -->
+    <div>
+      <div class="header">Overview</div>
+      <ul style="font-size: 16px; line-height: 1.8; padding-left: 20px; margin: 0;">
+        <li style="margin-bottom: 14px;">Estimating the density of future outcomes under a policy's <strong>occupancy measure</strong> is central to RL. <strong>Self-predictive representations</strong> (CRL, FB, TD-JEPA, BYOL-\(\gamma\), ...) are the dominant approach, but we find they give <strong>surprisingly poor density estimates</strong>, even on simple MDPs.</li>
+        <li style="margin-bottom: 14px;"><strong>Generative occupancy models</strong> (e.g. TD-flows) produce accurate samples of future states, but are not trained to estimate densities, so their expressivity goes unused for control.</li>
+        <li style="margin-bottom: 14px;">We propose <strong>Geometric Time Score Estimators (GTSE)</strong>: learn the <em>time score</em> of the occupancy measure along a probability path with temporal difference learning, and integrate it to recover the occupancy density.</li>
+        <li style="margin-bottom: 14px;">Under a bilinear parameterization, the time-score integral decomposes into an <strong>infinite sum of inner products of self-predictive representations</strong>, which explains GTSE's higher representational capacity. A variant, <strong>GTSE-\(r\)</strong>, learns explicit state-action and goal representations.</li>
+        <li style="margin-bottom: 0;">On OGBench locomotion and manipulation tasks, GTSE improves over state-of-the-art methods by <strong>2× to 6×</strong> in goal-conditioned RL, and GTSE-\(r\) representations <strong>transfer</strong> to downstream reward-based RL.</li>
+      </ul>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Motivation -->
+    <div>
+      <div class="header">How well do existing methods estimate occupancy density?</div>
+      <p style="font-size: 16px; line-height: 1.7;">
+        We build a 5-step toy MDP in \(\mathbb{R}^2\) with a branching, multimodal occupancy measure and compare each method's predicted occupancy density against the ground-truth \(\log d^{\pi_D}\) over 50 goals and 300 state-action pairs per goal. Most baselines estimate it poorly. The best baselines (CRL, TMD, TD-flows) reach Spearman \(\rho = 0.78\); GTSE reaches \(\rho = 0.96\).
+      </p>
+      <div style="margin: 16px 0 0;">
+        <img src="rank_final.png" alt="Normalized rank of predicted vs ground-truth log occupancy density for baselines and GTSE variants" style="width:100%; display:block;">
+        <p class="fig-caption">Normalized rank of estimated occupancy density vs. normalized rank of ground-truth \(\log d^{\pi_D}\) on the toy MDP (colored by distance of state from origin).</p>
+      </div>
+
+      <p style="font-size: 16px; line-height: 1.7; margin-top: 20px;">
+        These errors carry over to control. On <strong>pointmaze-large-diverse</strong>, we measure \(\rho\) for nearby and far-away goals and the success rate with best-of-16 action selection. Baselines degrade on far goals and the best one (CRL) reaches 3% success. GTSE reaches 38%.
+      </p>
+      <div class="chart" id="pm-chart"></div>
+      <div style="overflow-x:auto; margin: 16px 0 6px;">
+        <table class="bt-table" id="pm-table">
+          <caption style="caption-side:bottom; font-size:15px; color:#111; text-align:left; padding-top:8px; font-style:italic;">Spearman \(\rho\) with ground-truth \(\log d^{\pi_D}\) and success rate (%) on pointmaze-large-diverse over 4 seeds (± 95% bootstrapped CI). Click a row or button to switch the chart; hover a method to highlight it.</caption>
+          <thead>
+            <tr><th></th><th>CRL</th><th>FB</th><th>TD-JEPA</th><th>BYOL-γ</th><th>Dual GR</th><th>TMD</th><th>TD-flows</th><th>GTSE-b₀</th><th>GTSE-b₂</th><th>GTSE-b₁₀</th><th>GTSE-b</th><th>GTSE-r</th><th class="bt-ours">GTSE</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>ρ (near)</td><td>0.56</td><td>0.11</td><td>0.25</td><td>0.33</td><td>−0.07</td><td>0.56</td><td>0.00</td><td>0.56</td><td>0.60</td><td>0.60</td><td>0.60</td><td>0.60</td><td class="bt-ours"><strong>0.63</strong></td></tr>
+            <tr><td>ρ (far)</td><td>0.14</td><td>0.00</td><td>0.08</td><td>0.16</td><td>−0.09</td><td>0.30</td><td>0.05</td><td>0.50</td><td>0.51</td><td>0.52</td><td>0.53</td><td>0.52</td><td class="bt-ours"><strong>0.55</strong></td></tr>
+            <tr class="bt-mean"><td>Success rate</td><td>3±6</td><td>0±0</td><td>0±0</td><td>0±0</td><td>0±0</td><td>0±0</td><td>0±0</td><td>12±5</td><td>21±10</td><td>19±9</td><td>25±4</td><td>25±2</td><td class="bt-ours-mean">38±4</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Method -->
+    <div>
+      <div class="header">Method</div>
+
+      <div style="text-align:center; margin: 20px 0;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 220" style="width:100%; max-width:680px; display:inline-block;" aria-label="Pipeline: Learn the occupancy time score with TD → Integrate time score to get occupancy density → Use for downstream control">
+          <circle cx="120" cy="110" r="108" fill="white" stroke="#222" stroke-width="1.5"/>
+          <path d="M 42 55 A 88 88 0 0 1 198 55" fill="none" stroke="#bbb" stroke-width="1"/>
+          <text text-anchor="middle" font-family="sans-serif" font-size="17" fill="#111">
+            <tspan x="120" dy="95">Learn occupancy</tspan>
+            <tspan x="120" dy="22">time score with TD</tspan>
+          </text>
+          <text x="262" y="122" text-anchor="middle" font-family="sans-serif" font-size="46" font-weight="900" fill="#111" letter-spacing="-6">»»</text>
+          <circle cx="440" cy="110" r="108" fill="white" stroke="#222" stroke-width="1.5"/>
+          <path d="M 362 55 A 88 88 0 0 1 518 55" fill="none" stroke="#bbb" stroke-width="1"/>
+          <text text-anchor="middle" font-family="sans-serif" font-size="17" fill="#111">
+            <tspan x="440" dy="95">Integrate to get</tspan>
+            <tspan x="440" dy="22">occupancy density</tspan>
+          </text>
+          <text x="582" y="122" text-anchor="middle" font-family="sans-serif" font-size="46" font-weight="900" fill="#111" letter-spacing="-6">»»</text>
+          <circle cx="755" cy="110" r="100" fill="white" stroke="#222" stroke-width="1.5"/>
+          <path d="M 682 57 A 82 82 0 0 1 828 57" fill="none" stroke="#bbb" stroke-width="1"/>
+          <text text-anchor="middle" font-family="sans-serif" font-size="17" fill="#111">
+            <tspan x="755" dy="95">Use for downstream</tspan>
+            <tspan x="755" dy="22">control</tspan>
+          </text>
+        </svg>
+      </div>
+
+      <ol style="font-size: 16px; line-height: 1.7; padding-left: 22px; margin: 24px 0 0;">
+        <li style="margin-bottom: 20px;">
+          <strong>Occupancy modeling along probability paths</strong>
+          <ul style="margin-top: 10px; padding-left: 20px;">
+            <li style="margin-bottom: 10px;">The occupancy measure \(d^{\pi_D}(s^+ \mid s, a)\) is often a complex multimodal distribution. Instead of estimating it directly, we connect a simple base distribution \(p_0 = \mathcal{N}(0, I)\) to \(p_1(\cdot \mid s,a) \equiv d^{\pi_D}(\cdot \mid s,a)\) with a variance-preserving probability path:
+              \[ s_k^+ = \alpha_k s^+ + \sqrt{1-\alpha_k^2}\, s_0^+, \qquad k \sim \mathcal{U}[0,1] \]
+            </li>
+            <li style="margin-bottom: 10px;">The <strong>time score</strong> \(\partial_k \log p_k(s^+ \mid s,a)\) is the rate of change of log-density along the path. Integrating it recovers the log occupancy density:
+              \[ \log d^{\pi_D}(s^+ \mid s,a) = \int_0^1 \partial_k \log p_k(s^+ \mid s,a)\, dk + \log p_0(s^+) \]
+            </li>
+            <li style="margin-bottom: 0;">Conditioning on the endpoint \(s^+\) gives a closed-form regression target \(\partial_k \log p_k(s_k^+ \mid s^+)\) for a network \(s_\theta(s_k^+, k, s, a)\).</li>
+          </ul>
+          <div class="subheading"><strong>Interactive: the time score along a probability path</strong></div>
+          <p style="font-size: 16px; line-height: 1.7;">A 1D toy occupancy measure \(d^{\pi_D}(s^+ \mid s,a)\) (four modes). <strong>Drag the goal</strong> \(g^+\) on the left panel, <strong>scrub \(k\)</strong> on the right panel, and change \(N\). The shaded area under the time score up to \(k\), plus \(\log p_0(g^+)\), equals \(\log p_k(g^+ \mid s,a)\). At \(k = 1\) it recovers the occupancy density. The grey bars are the \(N\)-point sum GTSE uses at inference.</p>
+          <div id="ts-explorer" class="viz-card">
+            <div class="ts-panels">
+              <div id="ts-density"></div>
+              <div id="ts-score"></div>
+            </div>
+            <div class="ts-controls">
+              <button id="ts-play" class="ts-btn">Play</button>
+              <label>k <input type="range" id="ts-k" min="0" max="1" step="0.005"> <span id="ts-k-val" class="ts-num"></span></label>
+              <label>goal g⁺ <input type="range" id="ts-g" min="-4.4" max="4.4" step="0.01"> <span id="ts-g-val" class="ts-num"></span></label>
+              <label>N <input type="range" id="ts-n" min="1" max="40" step="1"> <span id="ts-n-val" class="ts-num"></span></label>
+            </div>
+            <div id="ts-readout" class="ts-readout"></div>
+          </div>
+        </li>
+        <li style="margin-bottom: 20px;">
+          <strong>Geometric Time Score Matching (TD learning)</strong>
+          <ul style="margin-top: 10px; padding-left: 20px;">
+            <li style="margin-bottom: 10px;">Monte Carlo targets cannot stitch trajectory segments. We use the recursive structure of the occupancy measure to bootstrap time-score predictions from the next state-action pair:</li>
+          </ul>
+          <div class="prop-box">
+            \[ \mathcal{L}_{\text{GTSE}}(\theta) = (1-\gamma)\, \mathcal{L}_{\text{next}}(\theta) + \gamma\, \mathcal{L}_{\text{future}}(\theta), \qquad \forall (s,a,s',a') \in \mathcal{D} \]
+            \[ \mathcal{L}_{\text{next}}(\theta) = \mathbb{E}_{k,\, s'_k \mid s'}\Big[\lambda(k)\big(\partial_k \log p_k(s'_k \mid s') - s_\theta(s'_k, k, s, a)\big)^2\Big] \]
+            \[ \mathcal{L}_{\text{future}}(\theta) = \mathbb{E}_{s^+ \sim d^{\pi_D}(\cdot \mid s',a')}\, \mathbb{E}_{k,\, s^+_k \mid s^+}\Big[\lambda(k)\big(\operatorname{sg}[s_{\bar\theta}(s^+_k, k, s', a')] - s_\theta(s^+_k, k, s, a)\big)^2\Big] \]
+          </div>
+          <ul style="padding-left: 20px;">
+            <li>At inference, the log-density of any \(s^+\) is a sum of \(N\) time-score evaluations: \(\log \hat{d}^{\pi_D}(s^+ \mid s,a) = \frac{1}{N}\sum_{i=0}^{N-1} s_\theta(s^+, i/N, s, a) + \log p_0(s^+)\).</li>
+          </ul>
+        </li>
+        <li style="margin-bottom: 20px;">
+          <strong>Why it works: multiscale future prediction</strong>
+          <ul style="margin-top: 10px; padding-left: 20px;">
+            <li style="margin-bottom: 10px;">If the time score factorizes as \(\phi(s,a,k)^\top \psi(g,k)\), the time-score integral has an exact <strong>Legendre decomposition</strong>:
+              \[ \log d^{\pi_D}(g \mid s,a) = \sum_{l=0}^{\infty} \hat{\phi}_l(s,a)^\top \hat{\psi}_l(g) + \log p_0(g) \]
+            </li>
+            <li style="margin-bottom: 0;">Truncating at order \(L\) gives rank up to \((L+1)\delta\). Prior self-predictive methods learn rank-\(\delta\) approximations, which corresponds to \(L = 0\). On the toy MDP, \(\rho\) increases from 0.82 (GTSE-\(b_0\)) to 0.96 as \(L\) grows.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>GTSE-\(r\): explicit representations.</strong> Parameterizing \(s_\theta(g,k,s,a) = \phi_\theta(s,a)^\top \psi_\theta(g,k)\) gives \(\log \hat{d} \propto \phi_\theta(s,a)^\top \bar{\psi}_\theta(g)\): a state-action representation and a goal representation learned along probability paths.
+        </li>
+      </ol>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Evaluation -->
+    <div>
+      <div class="header">Evaluation</div>
+
+      <div class="subheading"><strong>Goal-conditioned RL on OGBench</strong></div>
+      <p style="font-size: 16px; line-height: 1.7;">
+        We evaluate on long-horizon <a href="https://seohong.me/projects/ogbench/" target="_blank" rel="noopener noreferrer">OGBench</a> tasks across maze navigation, cube, puzzle and scene, including noisy datasets. All methods use best-of-\(M\) action selection with a flow-matching BC policy to isolate the quality of the estimator. GTSE averages 37.9%: <strong>2×</strong> the strongest baseline (TD-JEPA, 18.6%) and <strong>6×</strong> the weakest (TMD, 6.4%).
+      </p>
+      <div class="chart" id="gcrl-chart"></div>
+      <div style="overflow-x:auto; margin: 16px 0 6px;">
+        <table class="bt-table" id="gcrl-table">
+          <caption style="caption-side:bottom; font-size:15px; color:#111; text-align:left; padding-top:8px; font-style:italic;">Overall average success rate (%) across 5 test-time goals over 8 seeds per task (± 95% bootstrapped CI). Bold = best. Click a row or button to switch the chart; hover a method to highlight it.</caption>
+          <thead>
+            <tr><th>Dataset</th><th>GCBC</th><th>CRL</th><th>FB</th><th>TD-JEPA</th><th>BYOL-γ</th><th>Dual GR</th><th>TMD</th><th>SMORE</th><th>TD-flows</th><th>NF</th><th class="bt-ours">GTSE-r</th><th class="bt-ours">GTSE</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>scene-play</td><td>20±4</td><td>25±5</td><td>6±2</td><td>31±4</td><td>17±2</td><td>19±15</td><td>7±2</td><td>13±4</td><td>35±4</td><td>9±3</td><td class="bt-ours">60±5</td><td class="bt-ours"><strong>69±6</strong></td></tr>
+            <tr><td>scene-noisy</td><td>10±1</td><td>7±3</td><td>2±1</td><td>24±3</td><td>9±3</td><td>12±7</td><td>7±1</td><td>3±2</td><td>19±4</td><td>5±2</td><td class="bt-ours">37±4</td><td class="bt-ours"><strong>55±6</strong></td></tr>
+            <tr><td>puzzle-4x4-play</td><td>1±1</td><td>2±1</td><td>22±8</td><td><strong>36±3</strong></td><td>2±1</td><td>17±6</td><td>1±1</td><td>0±1</td><td>4±2</td><td>1±1</td><td class="bt-ours">26±6</td><td class="bt-ours"><strong>40±4</strong></td></tr>
+            <tr><td>puzzle-4x4-noisy</td><td>1±0</td><td>0±0</td><td>6±2</td><td>9±3</td><td>0±0</td><td>2±3</td><td>0±0</td><td>0±0</td><td>1±0</td><td>1±0</td><td class="bt-ours">9±2</td><td class="bt-ours"><strong>22±2</strong></td></tr>
+            <tr><td>cube-triple-play</td><td>5±2</td><td>2±1</td><td>1±0</td><td>1±1</td><td>0±1</td><td>13±2</td><td>1±1</td><td>2±3</td><td>16±3</td><td>0±0</td><td class="bt-ours">7±1</td><td class="bt-ours"><strong>18±1</strong></td></tr>
+            <tr><td>cube-triple-noisy</td><td>2±1</td><td>1±1</td><td>0±1</td><td>0±0</td><td>0±1</td><td>4±2</td><td>0±0</td><td>1±1</td><td><strong>8±2</strong></td><td>1±1</td><td class="bt-ours">4±1</td><td class="bt-ours"><strong>8±1</strong></td></tr>
+            <tr><td>antmaze-large-navigate</td><td>34±4</td><td>73±6</td><td>15±8</td><td>29±6</td><td>32±5</td><td>43±6</td><td>29±4</td><td>35±3</td><td>30±9</td><td>51±16</td><td class="bt-ours"><strong>78±4</strong></td><td class="bt-ours">53±4</td></tr>
+            <tr class="bt-mean"><td><strong>Mean</strong></td><td>10.4</td><td>15.7</td><td>7.4</td><td>18.6</td><td>8.6</td><td>15.7</td><td>6.4</td><td>7.7</td><td>16.1</td><td>9.7</td><td class="bt-ours">31.6</td><td class="bt-ours-mean">37.9</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="subheading"><strong>Do GTSE-\(r\) representations transfer to reward-based RL?</strong></div>
+      <div style="overflow: hidden;">
+        <div class="float-fig" style="float: right; margin: 0 0 12px 24px; text-align: center; width: 200px;">
+          <img src="scene-play.png" alt="OGBench scene environment" style="width: 200px; display: block; border-radius: 6px;">
+          <p class="fig-caption" style="max-width: 200px; margin: 6px 0 0; font-size: 13px;">scene-play</p>
+        </div>
+        <p style="font-size: 16px; line-height: 1.7;">
+          We freeze each method's representation encoder and feed it to the critic of Flow Q-Learning (FQL) on the 5 reward-based <strong>scene-play</strong> tasks. GTSE-\(r\) gets the highest mean success rate (62.2%), above TD-JEPA (46.6%) and end-to-end vanilla FQL (58.2%), and improves task 4 by about 4× over vanilla FQL.
+        </p>
+      </div>
+      <div class="chart" id="rew-chart"></div>
+      <div style="overflow-x:auto; margin: 8px 0 6px;">
+        <table class="bt-table" id="rew-table">
+          <caption style="caption-side:bottom; font-size:15px; color:#111; text-align:left; padding-top:8px; font-style:italic;">Reward-based RL on scene-play with frozen representation encoders. Success rate (%) over 4 seeds (± 95% bootstrapped CI). Click a row or button to switch the chart; hover a method to highlight it.</caption>
+          <thead>
+            <tr><th>Task</th><th>CRL</th><th>FB</th><th>TD-JEPA</th><th>BYOL-γ</th><th>Dual GR</th><th>TMD</th><th>Vanilla FQL</th><th class="bt-ours">GTSE-r</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>task 1</td><td>67±6</td><td>58±33</td><td>98±5</td><td>51±27</td><td>37±7</td><td>1±2</td><td><strong>100±0</strong></td><td class="bt-ours"><strong>100±1</strong></td></tr>
+            <tr><td>task 2</td><td>14±12</td><td>17±19</td><td>32±22</td><td>8±8</td><td>4±3</td><td>0±0</td><td><strong>83±23</strong></td><td class="bt-ours"><strong>81±12</strong></td></tr>
+            <tr><td>task 3</td><td>27±13</td><td>1±2</td><td>85±11</td><td>10±6</td><td>11±9</td><td>0±0</td><td><strong>99±3</strong></td><td class="bt-ours">94±5</td></tr>
+            <tr><td>task 4</td><td>10±5</td><td>0±0</td><td><strong>18±14</strong></td><td>10±4</td><td>7±4</td><td>0±0</td><td>9±7</td><td class="bt-ours"><strong>36±18</strong></td></tr>
+            <tr><td>task 5</td><td>2±2</td><td>0±0</td><td>0±0</td><td>0±0</td><td>4±7</td><td>0±0</td><td>0±0</td><td class="bt-ours">0±0</td></tr>
+            <tr class="bt-mean"><td><strong>Mean</strong></td><td>24.0</td><td>15.2</td><td>46.6</td><td>15.8</td><td>12.6</td><td>0.2</td><td>58.2</td><td class="bt-ours-mean">62.2</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="subheading"><strong>What affects GTSE performance?</strong></div>
+      <div class="two-up" style="display:flex; gap:16px; margin: 16px 0 8px; align-items:flex-start;">
+        <div style="flex:1; min-width:0;"><img src="kmax.png" alt="Effect of K_max on success rate" style="width:100%; display:block;"></div>
+        <div style="flex:1; min-width:0;"><img src="nfe.png" alt="Effect of number of time-score evaluations N on success rate" style="width:100%; display:block;"></div>
+      </div>
+      <p class="fig-caption"><strong>Left:</strong> Performance generally improves with \(K_{\max}\), the upper limit of the time-score integral, with diminishing gains as \(k \to 1\). <strong>Right:</strong> Performance improves with the number of time-score evaluations \(N\) and saturates between \(N = 20\) and \(N = 30\). Puzzle-4x4-play and antmaze-large-navigate; mean over 8 seeds with 95% CI.</p>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Citation -->
+    <div id="citation">
+      <div class="header">Citation</div>
+      <p style="font-size: 16px;">If you find this work useful, please cite:</p>
+      <div class="bibtex-wrapper">
+        <!-- TODO: update authors, venue and year -->
+        <pre id="bibtex-content">@article{venugopal2026gtse,
+  title   = {Geometric Time Score Estimators: Bridging Self-Predictive
+             Representations and Generative Occupancy Models
+             for Reinforcement Learning},
+  author  = {Aravind Venugopal and others},
+  year    = {2026}
+}</pre>
+        <button id="copy-bib">Copy</button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center; padding: 40px 0 20px; font-size: 12px; color: #888; border-top: 1px solid #ddd; margin-top: 40px;">
+      Aravind Venugopal · Carnegie Mellon University · 2026
+    </div>
+
+  </div><!-- /page-content -->
+
+  <script src="gtse.js"></script>
+  <script>
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        const target = document.querySelector(a.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+
+    // BibTeX copy button
+    document.getElementById('copy-bib').addEventListener('click', function() {
+      navigator.clipboard.writeText(document.getElementById('bibtex-content').innerText);
+      this.textContent = 'Copied ✓';
+      setTimeout(() => this.textContent = 'Copy', 2000);
+    });
+  </script>
+
+</body>
+</html>
