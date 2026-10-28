@@ -1,6 +1,6 @@
 // Interactive visualizations for the GTSE project page.
 (function () {
-  var ACCENT = '#641e16', ACCENT2 = '#c27c73', NEXT = '#d4883e', GREY = '#c9c9c9', INK = '#111', MUTED = '#888';
+  var ACCENT = '#641e16', ACCENT2 = '#c27c73', GREY = '#c9c9c9', INK = '#111', MUTED = '#888';
   var SVGNS = 'http://www.w3.org/2000/svg';
 
   function el(tag, attrs, parent) {
@@ -14,7 +14,6 @@
     var p = Math.pow(10, Math.floor(Math.log10(x))), f = x / p;
     return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * p;
   }
-  function npdf(x, m, v) { return Math.exp(-(x - m) * (x - m) / (2 * v)) / Math.sqrt(2 * Math.PI * v); }
   // Seeded RNG so the page looks the same on every load.
   function rng(seed) {
     return function () {
@@ -24,152 +23,103 @@
       return ((t ^ t >>> 14) >>> 0) / 4294967296;
     };
   }
-  function randn(r) { return Math.sqrt(-2 * Math.log(r() + 1e-12)) * Math.cos(2 * Math.PI * r()); }
-  function sample(r, probs) {
-    var u = r() * probs.reduce(function (a, b) { return a + b; }, 0), c = 0;
-    for (var i = 0; i < probs.length; i++) { c += probs[i]; if (u <= c) return i; }
-    return probs.length - 1;
-  }
-  // Run fn only while root is on screen.
-  function whenVisible(root, onShow, onHide) {
-    if (!('IntersectionObserver' in window)) { onShow(); return; }
-    new IntersectionObserver(function (es) {
-      es.forEach(function (e) { e.isIntersecting ? onShow() : onHide(); });
-    }, { threshold: 0.15 }).observe(root);
-  }
 
   // ---------------------------------------------------------------------------
-  // 1. Occupancy measure: animated rollouts of the paper's 5-step toy MDP in R^2.
-  //    a_t = eta_t for t < 2 and b*mu + eta_t for t >= 2, s_{t+1} = s_t + a_t + eps_t.
+  // 1. Occupancy measure on a tabular maze with a random-walk policy.
+  //    A rollout takes action a, follows pi, and stops after each step w.p. 1 - gamma;
+  //    its stopping cell is a sample from d(. | s, a). Cells are shaded by stopping frequency.
   // ---------------------------------------------------------------------------
+  var MAZE = [
+    '#################',
+    '#.......#.......#',
+    '#.#####.#.#####.#',
+    '#.#...........#.#',
+    '#.#.###.#.###.#.#',
+    '#...#...#...#...#',
+    '###.#.#####.#.###',
+    '#.....#...#.....#',
+    '#.###.#.#.#.###.#',
+    '#.....#.#.......#',
+    '#################'
+  ];
+
   function initOccupancy() {
     var cv = document.getElementById('occ-canvas');
     if (!cv) return;
     var ctx = cv.getContext('2d');
-    var W = 760, H = 470, XMIN = -4, XMAX = 4, YMIN = -2.47, YMAX = 2.47;
+    var NR = MAZE.length, NC = MAZE[0].length, W = 760, CS = W / NC, H = Math.round(NR * CS);
     var dpr = window.devicePixelRatio || 1;
     cv.width = W * dpr; cv.height = H * dpr; ctx.scale(dpr, dpr);
-    var MU = [1.0, 0.42], SIG = 0.12, SIGA = 0.18, V = SIG * SIG + SIGA * SIGA;
-    var GW = 152, GH = 94, grids = [], counts = [0, 0, 0, 0, 0];
-    for (var t = 0; t < 5; t++) grids.push(new Float32Array(GW * GH));
-    var off = document.createElement('canvas'); off.width = GW; off.height = GH;
-    var octx = off.getContext('2d'), img = octx.createImageData(GW, GH);
-    var R = rng(7), gamma = 0.6, particles = [], playing = true, rollouts = 0, hover = null;
+    var DIRS = [[-1, 0], [0, 1], [1, 0], [0, -1]];  // up, right, down, left
+    var cells = [], idx = {};
+    MAZE.forEach(function (row, r) { for (var c = 0; c < NC; c++) if (row[c] === '.') { idx[r * NC + c] = cells.length; cells.push([r, c]); } });
+    function at(r, c) { return MAZE[r] && MAZE[r][c] === '.' ? idx[r * NC + c] : -1; }
+    var nbr = cells.map(function (rc) { return DIRS.map(function (d) { return at(rc[0] + d[0], rc[1] + d[1]); }).filter(function (j) { return j >= 0; }); });
+    function move(i, a) { var j = at(cells[i][0] + DIRS[a][0], cells[i][1] + DIRS[a][1]); return j >= 0 ? j : i; }
+
+    var R = rng(5), start = at(3, 3), act = 1, gamma = 0.9, exact = [], counts = [], landed = 0;
+    var playing = true, hover = -1;
+    function computeExact() {
+      var v = new Float64Array(cells.length), d = new Float64Array(cells.length), w = 1 - gamma;
+      v[move(start, act)] = 1;
+      for (var t = 0; t < 3000 && w > 1e-9; t++) {
+        for (var i = 0; i < v.length; i++) d[i] += w * v[i];
+        var nv = new Float64Array(cells.length);
+        for (var j = 0; j < v.length; j++) if (v[j]) { var nb = nbr[j], p = v[j] / nb.length; for (var q = 0; q < nb.length; q++) nv[nb[q]] += p; }
+        v = nv; w *= gamma;
+      }
+      exact = d;
+    }
+    function reset() {
+      computeExact(); counts = new Float64Array(cells.length); landed = 0;
+      for (var i = 0; i < 100; i++) rollout();  // start from a coarse histogram instead of a blank maze
+    }
+    function rollout() { var i = move(start, act); while (R() < gamma) i = nbr[i][Math.floor(R() * nbr[i].length)]; counts[i]++; landed++; }
 
     var gSl = document.getElementById('occ-gamma'), gOut = document.getElementById('occ-gamma-val');
-    var wbars = document.getElementById('occ-wbars'), pastOut = document.getElementById('occ-past');
-    var hoverOut = document.getElementById('occ-hover'), countOut = document.getElementById('occ-count');
-    var play = document.getElementById('occ-play');
-    var barEls = [];
-    for (var b = 0; b < 5; b++) {
-      var d = document.createElement('div'); d.className = 'wbar' + (b >= 2 ? ' past' : '');
-      var s = document.createElement('span'); d.appendChild(s); wbars.appendChild(d); barEls.push(s);
-    }
+    var hoverOut = document.getElementById('occ-hover'), hoverEst = document.getElementById('occ-hover-est');
+    var countOut = document.getElementById('occ-count'), play = document.getElementById('occ-play'), exactBox = document.getElementById('occ-exact');
+    var pad = document.getElementById('occ-dpad');
 
-    function px(x) { return (x - XMIN) / (XMAX - XMIN) * W; }
-    function py(y) { return (YMAX - y) / (YMAX - YMIN) * H; }
-    function weights() {
-      var w = [], z = 0;
-      for (var t = 0; t < 5; t++) { w.push(Math.pow(gamma, t)); z += w[t]; }
-      return w.map(function (v) { return v / z; });
-    }
-    // Exact occupancy density: step j = t + 1 is N(0, jV) before the branch and 0.5 N(+-(j-2)mu, jV) after.
-    function density(x, y) {
-      var w = weights(), d = 0;
-      for (var t = 0; t < 5; t++) {
-        var j = t + 1, v = j * V, c = 1 / (2 * Math.PI * v), m = Math.max(0, j - 2);
-        if (m === 0) d += w[t] * c * Math.exp(-(x * x + y * y) / (2 * v));
-        else for (var sgn = -1; sgn <= 1; sgn += 2) {
-          var dx = x - sgn * m * MU[0], dy = y - sgn * m * MU[1];
-          d += w[t] * 0.5 * c * Math.exp(-(dx * dx + dy * dy) / (2 * v));
-        }
-      }
-      return d;
-    }
-    function rollout() {
-      var br = R() < 0.5 ? -1 : 1, pts = [[0, 0]];
-      for (var t = 0; t < 5; t++) {
-        var p = pts[t], ax = SIGA * randn(R), ay = SIGA * randn(R);
-        if (t >= 2) { ax += br * MU[0]; ay += br * MU[1]; }
-        pts.push([p[0] + ax + SIG * randn(R), p[1] + ay + SIG * randn(R)]);
-      }
-      return { pts: pts, t: 0, done: 0 };
-    }
-    function deposit(step, x, y) {
-      var gx = (x - XMIN) / (XMAX - XMIN) * GW, gy = (YMAX - y) / (YMAX - YMIN) * GH, g = grids[step];
-      var cx = Math.round(gx), cy = Math.round(gy);
-      for (var i = -2; i <= 2; i++) for (var j = -2; j <= 2; j++) {
-        var X = cx + i, Y = cy + j;
-        if (X < 0 || Y < 0 || X >= GW || Y >= GH) continue;
-        var ddx = X - gx, ddy = Y - gy;
-        g[Y * GW + X] += Math.exp(-(ddx * ddx + ddy * ddy) / 2.4);
-      }
-      counts[step]++;
-    }
-    function paintHeat() {
-      var w = weights(), field = new Float32Array(GW * GH), mx = 1e-9, i;
-      for (var t = 0; t < 5; t++) {
-        if (!counts[t]) continue;
-        var c = w[t] / counts[t], g = grids[t];
-        for (i = 0; i < field.length; i++) field[i] += c * g[i];
-      }
-      for (i = 0; i < field.length; i++) if (field[i] > mx) mx = field[i];
-      var data = img.data;
-      for (i = 0; i < field.length; i++) {
-        var v = Math.pow(field[i] / mx, 0.4);
-        data[4 * i] = 252 + (100 - 252) * v; data[4 * i + 1] = 252 + (30 - 252) * v; data[4 * i + 2] = 252 + (22 - 252) * v; data[4 * i + 3] = 255;
-      }
-      octx.putImageData(img, 0, 0);
-      ctx.imageSmoothingEnabled = true;
-      ctx.drawImage(off, 0, 0, W, H);
-    }
+    function cx(i) { return (cells[i][1] + 0.5) * CS; }
+    function cy(i) { return (cells[i][0] + 0.5) * CS; }
+    var NAVY = '#0b2545';
     function draw() {
       ctx.clearRect(0, 0, W, H);
-      paintHeat();
-      ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 1;
-      for (var gx = -3; gx <= 3; gx++) { ctx.beginPath(); ctx.moveTo(px(gx), 0); ctx.lineTo(px(gx), H); ctx.stroke(); }
-      for (var gy = -2; gy <= 2; gy++) { ctx.beginPath(); ctx.moveTo(0, py(gy)); ctx.lineTo(W, py(gy)); ctx.stroke(); }
-      // rollouts
-      particles.forEach(function (p) {
-        var k = Math.floor(p.t), f = p.t - k, a = p.pts[k], b = p.pts[Math.min(k + 1, 5)];
-        var x = a[0] + (b[0] - a[0]) * f, y = a[1] + (b[1] - a[1]) * f;
-        ctx.strokeStyle = 'rgba(100,30,22,0.18)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(px(0), py(0));
-        for (var j = 1; j <= k; j++) ctx.lineTo(px(p.pts[j][0]), py(p.pts[j][1]));
-        ctx.lineTo(px(x), py(y)); ctx.stroke();
-        ctx.fillStyle = ACCENT; ctx.beginPath(); ctx.arc(px(x), py(y), 3, 0, 2 * Math.PI); ctx.fill();
+      var field = exactBox.checked ? exact : counts, mx = 1e-12;
+      for (var i = 0; i < field.length; i++) if (field[i] > mx) mx = field[i];
+      ctx.fillStyle = '#c9d3de'; ctx.fillRect(0, 0, W, H);
+      cells.forEach(function (rc, i) {
+        var v = Math.pow(field[i] / mx, 0.5);
+        ctx.fillStyle = 'rgb(' + Math.round(247 + (31 - 247) * v) + ',' + Math.round(250 + (78 - 250) * v) + ',' + Math.round(253 + (121 - 253) * v) + ')';
+        ctx.fillRect(rc[1] * CS + 0.5, rc[0] * CS + 0.5, CS - 1, CS - 1);
       });
-      // start state and labels
-      ctx.fillStyle = '#fff'; ctx.strokeStyle = INK; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.arc(px(0), py(0), 6, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
-      ctx.font = '14px Barlow, sans-serif'; ctx.fillStyle = INK; ctx.fillText('(s, a)', px(0) + 10, py(0) - 10);
-      ctx.fillStyle = '#777'; ctx.font = '13px Barlow, sans-serif';
-      ctx.fillText('branch b = +1', px(2.3), py(1.45));
-      ctx.fillText('branch b = −1', px(-3.6), py(-0.75));
-      ctx.fillText('future state s⁺ ∈ ℝ²', 10, H - 10);
-      if (hover) {
-        ctx.strokeStyle = INK; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(px(hover[0]), py(hover[1]), 9, 0, 2 * Math.PI); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(px(hover[0]) - 14, py(hover[1])); ctx.lineTo(px(hover[0]) + 14, py(hover[1]));
-        ctx.moveTo(px(hover[0]), py(hover[1]) - 14); ctx.lineTo(px(hover[0]), py(hover[1]) + 14); ctx.stroke();
-      }
+      if (hover >= 0) { ctx.strokeStyle = NAVY; ctx.lineWidth = 1.5; ctx.strokeRect(cells[hover][1] * CS + 2, cells[hover][0] * CS + 2, CS - 4, CS - 4); }
+      // start state and action
+      var sx = cx(start), sy = cy(start), d0 = DIRS[act];
+      ctx.strokeStyle = NAVY; ctx.fillStyle = '#fff'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(sx, sy, CS * 0.3, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = NAVY; ctx.font = '500 14px Barlow, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('s', sx, sy + 1);
+      var ax = sx + d0[1] * CS * 0.3, ay = sy + d0[0] * CS * 0.3, bx = sx + d0[1] * CS * 0.78, by = sy + d0[0] * CS * 0.78;
+      // action arrow: white with a navy outline so it reads on both light and dark cells
+      ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx - d0[1] * 6, by - d0[0] * 6);
+      ctx.strokeStyle = NAVY; ctx.lineWidth = 6; ctx.stroke(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(bx + d0[1] * 2, by + d0[0] * 2);
+      ctx.lineTo(bx - d0[1] * 9 - d0[0] * 7, by - d0[0] * 9 + d0[1] * 7); ctx.lineTo(bx - d0[1] * 9 + d0[0] * 7, by - d0[0] * 9 - d0[1] * 7); ctx.closePath();
+      ctx.fillStyle = '#fff'; ctx.strokeStyle = NAVY; ctx.lineWidth = 1.5; ctx.fill(); ctx.stroke();
     }
     function updatePanel() {
       gOut.textContent = gamma.toFixed(2); gSl.value = gamma;
-      var w = weights(), mx = Math.max.apply(null, w);
-      barEls.forEach(function (s, i) { s.style.height = (w[i] / mx * 100) + '%'; });
-      pastOut.textContent = Math.round((w[2] + w[3] + w[4]) * 100) + '%';
-      hoverOut.textContent = hover ? density(hover[0], hover[1]).toFixed(3) : '–';
-      countOut.textContent = rollouts + ' rollouts';
+      Array.prototype.forEach.call(pad.children, function (bt) { bt.classList.toggle('is-active', +bt.getAttribute('data-a') === act); });
+      if (hover >= 0) {
+        hoverOut.textContent = exact[hover].toFixed(3);
+        hoverEst.textContent = landed ? 'estimate from rollouts: ' + (counts[hover] / landed).toFixed(3) : '';
+      } else { hoverOut.textContent = '–'; hoverEst.textContent = ''; }
+      countOut.textContent = landed + ' rollouts';
     }
-    function step(dt) {
-      if (particles.length < 70 && Math.random() < dt * 16) { particles.push(rollout()); }
-      particles.forEach(function (p) {
-        p.t = Math.min(5, p.t + dt * 2.2);
-        while (p.done < Math.floor(p.t)) { p.done++; deposit(p.done - 1, p.pts[p.done][0], p.pts[p.done][1]); }
-      });
-      var before = particles.length;
-      particles = particles.filter(function (p) { return p.t < 5; });
-      rollouts += before - particles.length;
-    }
+    var owed = 0;
+    var AUTO = 1000;  // automatic rollouts stop here; the +1000 button can add more
+    function step(dt) { owed += dt * 150; while (owed >= 1 && landed < AUTO) { rollout(); owed--; } }
 
     var raf = null, last = 0, visible = false;
     function tick(ts) {
@@ -178,29 +128,27 @@
       draw(); updatePanel();
       raf = visible ? requestAnimationFrame(tick) : null;
     }
-    function kick() { if (!raf) { last = 0; raf = requestAnimationFrame(tick); } }
+    function redraw() { updatePanel(); if (!raf) draw(); }
 
-    gSl.addEventListener('input', function () { gamma = +gSl.value; updatePanel(); if (!raf) draw(); });
+    gSl.addEventListener('input', function () { gamma = +gSl.value; reset(); redraw(); });
+    Array.prototype.forEach.call(pad.children, function (bt) { bt.addEventListener('click', function () { act = +bt.getAttribute('data-a'); reset(); redraw(); }); });
     play.addEventListener('click', function () { playing = !playing; play.textContent = playing ? 'Pause' : 'Play'; });
-    document.getElementById('occ-ff').addEventListener('click', function () {
-      for (var i = 0; i < 1000; i++) { var p = rollout(); for (var j = 1; j <= 5; j++) deposit(j - 1, p.pts[j][0], p.pts[j][1]); }
-      rollouts += 1000; draw(); updatePanel();
-    });
-    document.getElementById('occ-clear').addEventListener('click', function () {
-      grids.forEach(function (g) { g.fill(0); }); counts = [0, 0, 0, 0, 0]; particles = []; rollouts = 0; draw(); updatePanel();
-    });
-    cv.addEventListener('pointermove', function (e) {
+    document.getElementById('occ-ff').addEventListener('click', function () { for (var i = 0; i < 1000; i++) rollout(); redraw(); });
+    exactBox.addEventListener('change', redraw);
+    function cellAt(e) {
       var r = cv.getBoundingClientRect();
-      hover = [XMIN + (e.clientX - r.left) / r.width * (XMAX - XMIN), YMAX - (e.clientY - r.top) / r.height * (YMAX - YMIN)];
-      updatePanel(); if (!raf) draw();
-    });
-    cv.addEventListener('pointerleave', function () { hover = null; updatePanel(); if (!raf) draw(); });
+      return at(Math.floor((e.clientY - r.top) / r.height * NR), Math.floor((e.clientX - r.left) / r.width * NC));
+    }
+    cv.addEventListener('pointermove', function (e) { hover = cellAt(e); redraw(); });
+    cv.addEventListener('pointerleave', function () { hover = -1; redraw(); });
+    cv.addEventListener('click', function (e) { var c = cellAt(e); if (c >= 0) { start = c; reset(); redraw(); } });
 
-    // seed the heatmap so it is never empty
-    for (var i = 0; i < 400; i++) { var p0 = rollout(); for (var j = 1; j <= 5; j++) deposit(j - 1, p0.pts[j][0], p0.pts[j][1]); }
-    rollouts = 400;
-    updatePanel(); draw();
-    whenVisible(cv, function () { visible = true; kick(); }, function () { visible = false; });
+    reset(); updatePanel(); draw();
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (es) {
+        es.forEach(function (e) { visible = e.isIntersecting; if (visible && !raf) { last = 0; raf = requestAnimationFrame(tick); } });
+      }, { threshold: 0.15 }).observe(cv);
+    } else { visible = true; raf = requestAnimationFrame(tick); }
   }
 
   // ---------------------------------------------------------------------------
@@ -228,7 +176,7 @@
     if (!root) return;
     var kSl = document.getElementById('ts-k'), gSl = document.getElementById('ts-g'), nSl = document.getElementById('ts-n');
     var kOut = document.getElementById('ts-k-val'), gOut = document.getElementById('ts-g-val'), nOut = document.getElementById('ts-n-val');
-    var play = document.getElementById('ts-play'), readout = document.getElementById('ts-readout');
+    var play = document.getElementById('ts-play');
 
     var W = 520, H = 260, M = { l: 40, r: 14, t: 18, b: 34 };
     var XMIN = -4.5, XMAX = 4.5;
@@ -320,17 +268,11 @@
 
       // N-point Riemann sum of the time score (left endpoints i/N, as in the paper)
       clear(bars);
-      var est = 0, bw = pw / n;
+      var bw = pw / n;
       for (var b = 0; b < n; b++) {
         var kb = b / n, vb = timeScore(g, kb);
-        est += vb / n;
         el('rect', { x: kx(kb) + 0.5, width: Math.max(bw - 1, 0.5), y: Math.min(ty(vb), ty(0)), height: Math.abs(ty(vb) - ty(0)), fill: 'rgba(0,0,0,0.07)' }, bars);
       }
-      var lp0 = logpk(g, 0), truth = logpk(g, 1), partial = logpk(g, k);
-      readout.innerHTML =
-        '<span>log p₀(g⁺) + ∫₀<sup>' + k.toFixed(2) + '</sup> time score = <b>' + partial.toFixed(2) + '</b></span>' +
-        '<span>N = ' + n + ' estimate of log d(g⁺ | s, a): <b>' + (lp0 + est).toFixed(2) + '</b></span>' +
-        '<span>true log d(g⁺ | s, a): <b>' + truth.toFixed(2) + '</b></span>';
     }
 
     kSl.addEventListener('input', function () { state.k = +kSl.value; stop(); render(); });
@@ -381,200 +323,104 @@
   }
 
   // ---------------------------------------------------------------------------
-  // 3. GTSE loss on a 1D corridor. Data: A -> B and B -> C segments, never A -> C.
-  //    The fixed point of the loss is D = (1-g) P + g P D; each "TD update" applies it once.
+  // 3. Interactive main figure: densities along the probability path, with the
+  //    finite-difference view of the time score between k_i and k_i + dk.
   // ---------------------------------------------------------------------------
-  function initTD() {
-    var root = document.getElementById('td-card');
+  function initPathFigure() {
+    var root = document.getElementById('pf');
     if (!root) return;
-    var NX = 113, DX = 14 / (NX - 1), XV = 10.5, xs = [];  // simulate on [0, 14], plot [0, 10.5]
-    for (var i = 0; i < NX; i++) xs.push(i * DX);
-    var DRIFT = 0.6, SD = 0.3, GAMMA = 0.93, A = 1, B = 5, C = 8.5, iA = Math.round(A / DX);
-    function z(x) { return (x - 5) / 2.5; }  // rescale positions to roughly unit scale for the path
-    var P = xs.map(function (x) {
-      var r = xs.map(function (y) { return npdf(y, x + DRIFT, SD * SD); }), s = r.reduce(function (a, b) { return a + b; });
-      return r.map(function (v) { return v / s; });
+    var kSl = document.getElementById('pf-k'), dkSl = document.getElementById('pf-dk'), gSl = document.getElementById('pf-g');
+    var kOut = document.getElementById('pf-k-val'), dkOut = document.getElementById('pf-dk-val'), gOut = document.getElementById('pf-g-val');
+    var formula = document.getElementById('pf-formula');
+    var state = { k: 0.75, dk: 0.15, g: 2.7 };
+
+    // k_i and k_i + dk are the two large panels; k = 0 and k = 1 are small panels at the ends of the path-time axis.
+    var W = 1000, H = 310, AY = 262, AX0 = 140, AX1 = 860;
+    var SLOTS = [10, 170, 560, 880], PWS = [110, 270, 270, 110], PB = [AY + 18, 175, 175, AY + 18], PHS = [55, 150, 150, 55];
+    var XMIN = -4.5, XMAX = 4.5;
+    var strip = el('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'ts-svg' }, document.getElementById('pf-strip'));
+    function ax(k) { return AX0 + k * (AX1 - AX0); }
+    function px(slot, x) { return SLOTS[slot] + (x - XMIN) / (XMAX - XMIN) * PWS[slot]; }
+    var xs = []; for (var i = 0; i <= 160; i++) xs.push(XMIN + (XMAX - XMIN) * i / 160);
+    var panels = SLOTS.map(function (left, s) {
+      var g = el('g', {}, strip), PW = PWS[s];
+      el('line', { x1: left, x2: left + PW, y1: PB[s], y2: PB[s], stroke: '#999' }, g);
+      return {
+        fill: el('path', { fill: 'rgba(100,30,22,0.08)' }, g), line: el('path', { fill: 'none', stroke: ACCENT, 'stroke-width': 2 }, g),
+        gl: el('line', { stroke: '#c0392b', 'stroke-dasharray': '2 3', 'stroke-width': 1.5 }, g), gd: el('circle', { r: 5.5, fill: '#c0392b' }, g),
+        gt: el('text', { class: 'ts-glab', style: 'fill:#2e7d32' }, g),
+        lab: el('text', { x: left + PW / 2, y: PB[s] + (s === 1 || s === 2 ? 24 : 20), 'text-anchor': 'middle', class: 'ts-axis', style: 'font-size:' + (s === 1 || s === 2 ? 16 : 13) + 'px; fill:#111' }, g)
+      };
     });
-    function bellman(D, rows) {
-      return rows.map(function (i) {
-        var Pi = P[i], fut = new Float64Array(NX), nxt = new Float64Array(NX);
-        for (var j = 0; j < NX; j++) {
-          var p = Pi[j]; if (p < 1e-12) continue;
-          var Dj = D[j];
-          for (var m = 0; m < NX; m++) fut[m] += p * Dj[m];
-        }
-        for (var m2 = 0; m2 < NX; m2++) { nxt[m2] = (1 - GAMMA) * Pi[m2]; fut[m2] *= GAMMA; }
-        return { next: nxt, fut: fut };
+    var dl1 = el('line', { stroke: INK, 'stroke-dasharray': '5 4' }, strip), dl2 = el('line', { stroke: INK, 'stroke-dasharray': '5 4' }, strip);
+    var dArrow = el('line', { stroke: '#c0392b', 'stroke-width': 3, 'stroke-linecap': 'round' }, strip);
+    // path-time axis
+    el('line', { x1: AX0, x2: AX1, y1: AY, y2: AY, stroke: INK, 'stroke-width': 2.5 }, strip);
+    el('text', { x: (AX0 + AX1) / 2, y: AY + 28, 'text-anchor': 'middle', class: 'ts-axis', style: 'font-size:15px' }, strip).textContent = 'probability-path time k   (drag kᵢ)';
+    var conn = [1, 2].map(function () { return el('line', { stroke: '#ccc', 'stroke-dasharray': '2 3' }, strip); });
+    var ticks = [0, 1, 2, 3].map(function () { return el('line', { stroke: INK, 'stroke-width': 2 }, strip); });
+    var handle = el('circle', { r: 8, fill: ACCENT, stroke: '#fff', 'stroke-width': 2, style: 'cursor:ew-resize' }, strip);
+
+    function tex(node, src) {
+      if (window.katex) window.katex.render(src, node, { throwOnError: false, displayMode: true });
+      else node.textContent = src;
+    }
+    function render() {
+      var g = state.g, K = [0, state.k, Math.min(state.k + state.dk, 1), 1];
+      kSl.value = state.k; kOut.textContent = K[1].toFixed(2); dkSl.value = state.dk; dkOut.textContent = state.dk.toFixed(2);
+      gSl.value = g; gOut.textContent = g.toFixed(2);
+      // k_i and k_i + dk share a y-scale so the two density heights at g+ compare directly
+      var dens = K.map(function (k) { return xs.map(function (x) { return Math.exp(logpk(x, k)); }); });
+      var mx = dens.map(function (d) { return Math.max.apply(null, d); });
+      mx[1] = mx[2] = Math.max(mx[1], mx[2]);
+      var labs = ['k = 0:  N(0, I)', 'kᵢ = ' + K[1].toFixed(2), 'kᵢ + Δk = ' + K[2].toFixed(2), 'k = 1:  d(· | s, a)'], gy = [];
+      panels.forEach(function (p, s) {
+        function py(v) { return PB[s] - v / mx[s] * PHS[s] * 0.9; }
+        var d = xs.map(function (x, j) { return (j ? 'L' : 'M') + px(s, x).toFixed(1) + ',' + py(dens[s][j]).toFixed(1); }).join('');
+        p.line.setAttribute('d', d);
+        p.fill.setAttribute('d', d + 'L' + px(s, XMAX) + ',' + PB[s] + 'L' + px(s, XMIN) + ',' + PB[s] + 'Z');
+        var y = py(Math.exp(logpk(g, K[s]))); gy.push(y);
+        p.gd.setAttribute('cx', px(s, g)); p.gd.setAttribute('cy', y);
+        p.gl.setAttribute('x1', px(s, g)); p.gl.setAttribute('x2', px(s, g)); p.gl.setAttribute('y1', y); p.gl.setAttribute('y2', PB[s]);
+        p.gt.setAttribute('x', px(s, g) + 9); p.gt.setAttribute('y', y - 6); p.gt.textContent = 'g⁺';
+        p.lab.textContent = labs[s];
       });
-    }
-    var ALL = xs.map(function (_, i) { return i; });
-    function apply(D) { return bellman(D, ALL).map(function (c) { return c.next.map(function (v, m) { return v + c.fut[m]; }); }); }
-    var truth = P; for (var it = 0; it < 500; it++) truth = apply(truth);
-    // Monte Carlo: futures only within the same A -> B trajectory (it ends once it passes B).
-    var mc = new Float64Array(NX), q = P[iA].map(function (v, m) { return xs[m] <= B ? v : 0; }), gt = 1;
-    for (var t = 0; t < 300; t++) {
-      for (var m = 0; m < NX; m++) mc[m] += gt * q[m];
-      gt *= GAMMA;
-      var nq = new Float64Array(NX);
-      for (var j = 0; j < NX; j++) if (q[j] > 1e-14) for (var m3 = 0; m3 < NX; m3++) nq[m3] += q[j] * P[j][m3];
-      q = Array.prototype.map.call(nq, function (v, m4) { return xs[m4] <= B ? v : 0; });
-    }
-    var mcSum = mc.reduce(function (a, b) { return a + b; }); mc = Array.prototype.map.call(mc, function (v) { return v / mcSum; });
-    function massC(row) { var s = 0; for (var m = 0; m < NX; m++) if (Math.abs(xs[m] - C) <= 0.5) s += row[m]; return s; }
-    var trueC = massC(truth[iA]);
-
-    var D, n, comp;  // D_n for all rows; comp = next / future split of row A
-    // Start from a single next-state term, (1-g) P, so mass fills in from A outward with each update.
-    function reset() {
-      D = P.map(function (r) { return r.map(function (v) { return (1 - GAMMA) * v; }); }); n = 0;
-      comp = { next: D[iA].slice(), fut: new Array(NX).fill(0) }; batch = [];
-    }
-    function update() { comp = bellman(D, [iA])[0]; D = apply(D); n++; batch = []; }
-
-    // ----- top panel: occupancy from A -----
-    var W = 760, H = 250, M = { l: 44, r: 12, t: 14, b: 40 }, pw = W - M.l - M.r, ph = H - M.t - M.b;
-    var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'bar-svg' }, document.getElementById('td-density'));
-    function sx(x) { return M.l + x / XV * pw; }
-    var axisG = el('g', {}, svg), areaN = el('path', { fill: NEXT, opacity: 0.85 }, svg), areaF = el('path', { fill: ACCENT, opacity: 0.85 }, svg);
-    var tLine = el('path', { fill: 'none', stroke: INK, 'stroke-width': 1.5, 'stroke-dasharray': '5 4' }, svg);
-    var mLine = el('path', { fill: 'none', stroke: '#999', 'stroke-width': 2, 'stroke-dasharray': '2 3' }, svg);
-    el('line', { x1: M.l, x2: M.l + pw, y1: M.t + ph, y2: M.t + ph, stroke: '#bbb' }, svg);
-    [['A', A], ['B', B], ['C', C]].forEach(function (p) {
-      el('line', { x1: sx(p[1]), x2: sx(p[1]), y1: M.t, y2: M.t + ph, stroke: '#ddd', 'stroke-dasharray': '2 3' }, svg);
-      el('text', { x: sx(p[1]), y: M.t + ph + 16, 'text-anchor': 'middle', class: 'bar-lab', style: 'font-weight:500; fill:#111' }, svg).textContent = p[0];
-    });
-    function seg(x0, x1, y, lab) {
-      el('line', { x1: sx(x0) + 8, x2: sx(x1) - 8, y1: y, y2: y, stroke: '#999', 'stroke-width': 1.2, 'marker-end': 'url(#td-arrow)' }, svg);
-      el('text', { x: (sx(x0) + sx(x1)) / 2, y: y - 4, 'text-anchor': 'middle', class: 'ts-tick' }, svg).textContent = lab;
-    }
-    var defs = el('defs', {}, svg), mk = el('marker', { id: 'td-arrow', viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto' }, defs);
-    el('path', { d: 'M0,0 L10,5 L0,10 z', fill: '#999' }, mk);
-    seg(A, B, M.t + ph + 32, 'data: A → B'); seg(B, XV, M.t + ph + 32, 'data: B → C');
-    var mcBox = document.getElementById('td-mc'), readout = document.getElementById('td-readout');
-
-    function areaPath(base, top, y) {
-      var d = '';
-      var last = Math.floor(XV / DX);
-      for (var m = 0; m <= last; m++) d += (m ? 'L' : 'M') + sx(xs[m]).toFixed(1) + ',' + y(top[m] / DX).toFixed(1);
-      for (var m2 = last; m2 >= 0; m2--) d += 'L' + sx(xs[m2]).toFixed(1) + ',' + y(base[m2] / DX).toFixed(1);
-      return d + 'Z';
-    }
-    function linePath(row, y) {
-      var d = '';
-      for (var m = 0; m < NX && xs[m] <= XV; m++) d += (m ? 'L' : 'M') + sx(xs[m]).toFixed(1) + ',' + y(row[m] / DX).toFixed(1);
-      return d;
-    }
-    function renderTop() {
-      var total = comp.next.map(function (v, m) { return v + comp.fut[m]; });
-      function vmax(row) { var v = 0; for (var m = 0; m < NX; m++) if (xs[m] <= XV && row[m] > v) v = row[m]; return v; }
-      var hi = Math.max(vmax(total), vmax(truth[iA]), mcBox.checked ? vmax(mc) : 0) / DX * 1.08;
-      function y(v) { return M.t + ph - v / hi * ph; }
-      clear(axisG);
-      var st = niceStep(hi / 4);
-      for (var v = st; v <= hi; v += st) {
-        el('line', { x1: M.l, x2: M.l + pw, y1: y(v), y2: y(v), stroke: '#f0f0f0' }, axisG);
-        el('text', { x: M.l - 6, y: y(v) + 4, 'text-anchor': 'end', class: 'ts-tick' }, axisG).textContent = +v.toFixed(2);
-      }
-      var zeros = new Array(NX).fill(0);
-      areaN.setAttribute('d', areaPath(zeros, comp.next, y));
-      areaF.setAttribute('d', areaPath(comp.next, total, y));
-      tLine.setAttribute('d', linePath(truth[iA], y));
-      mLine.setAttribute('d', linePath(mc, y)); mLine.style.display = mcBox.checked ? '' : 'none';
-      document.getElementById('td-mc-leg').style.opacity = mcBox.checked ? 1 : 0.35;
-      readout.innerHTML = '<span>TD updates: <b>' + n + '</b></span>' +
-        '<span>d̂(C | A) as % of true, TD: <b>' + Math.round(massC(total) / trueC * 100) + '%</b></span>' +
-        '<span>Monte Carlo: <b>' + Math.round(massC(mc) / trueC * 100) + '%</b></span>';
-    }
-
-    // ----- bottom panel: one minibatch of the loss at noise level k -----
-    var R = rng(11), k = 0.7, batch = [];
-    var kSl = document.getElementById('td-k'), kOut = document.getElementById('td-k-val'), bOut = document.getElementById('td-batch-readout');
-    // Time score at (y, k) of the occupancy row (a mixture of point masses at z(x)) along the VP path, alpha_k = k.
-    function score(row, y, kk) {
-      var v = 1 - kk * kk, p = 0, dp = 0;
-      for (var m = 0; m < NX; m++) {
-        if (row[m] < 1e-10) continue;
-        var x = z(xs[m]), e = y - kk * x, nn = row[m] * Math.exp(-e * e / (2 * v));
-        p += nn; dp += nn * (kk / v + e * x / v - kk * e * e / (v * v));
-      }
-      return p > 1e-300 ? dp / p : 0;
-    }
-    function drawBatch() {
-      batch = [];
-      var v = 1 - k * k, sv = Math.sqrt(v);
-      for (var b = 0; b < 48; b++) {
-        var j = sample(R, P[iA]), eps = randn(R);
-        if (R() < 1 - GAMMA) {
-          // next: noise the observed s' and use the closed-form conditional time score (Eq. 3, dim = 1, alpha' = 1)
-          var xp = z(xs[j]), y = k * xp + sv * eps;
-          batch.push({ y: y, t: k / v * (1 - eps * eps) + eps * xp / sv, kind: 'next' });
-        } else {
-          // future: s+ from the model at s', target is the model's own time score at s'
-          var mm = sample(R, D[j]), y2 = k * z(xs[mm]) + sv * eps;
-          batch.push({ y: y2, t: score(D[j], y2, k), kind: 'fut' });
-        }
-      }
-      setRange();
-    }
-    var W2 = 760, H2 = 230, M2 = { l: 44, r: 12, t: 12, b: 34 }, pw2 = W2 - M2.l - M2.r, ph2 = H2 - M2.t - M2.b;
-    var svg2 = el('svg', { viewBox: '0 0 ' + W2 + ' ' + H2, class: 'bar-svg' }, document.getElementById('td-batch'));
-    var YL = -2.6, YH = 2.6;
-    function setRange() {
-      if (!batch.length) return;
-      var ys = batch.map(function (s) { return s.y; }).sort(function (a, b) { return a - b; });
-      YL = ys[0] - 0.15; YH = ys[ys.length - 1] + 0.15;
-    }
-    function bx(y) { return M2.l + (y - YL) / (YH - YL) * pw2; }
-    var ax2 = el('g', {}, svg2), resG = el('g', {}, svg2), cNow = el('path', { fill: 'none', stroke: ACCENT, 'stroke-width': 2.5 }, svg2);
-    var cTgt = el('path', { fill: 'none', stroke: INK, 'stroke-width': 1.5, 'stroke-dasharray': '2 3' }, svg2), dotG = el('g', {}, svg2);
-    el('text', { x: M2.l + pw2 / 2, y: H2 - 2, 'text-anchor': 'middle', class: 'ts-axis' }, svg2).textContent = 'noised future state s⁺ₖ (rescaled)';
-    function renderBatch() {
-      kOut.textContent = k.toFixed(2); kSl.value = k;
-      var ys = [], now = [], tgt = [], rowA = D[iA], nextRow = bellman(D, [iA])[0];
-      var after = nextRow.next.map(function (v, m) { return v + nextRow.fut[m]; });
-      for (var i = 0; i <= 160; i++) { var y = YL + (YH - YL) * i / 160; ys.push(y); now.push(score(rowA, y, k)); tgt.push(score(after, y, k)); }
-      var ts = batch.map(function (s) { return s.t; }).sort(function (a, b) { return a - b; });
-      var all = now.concat(tgt);
-      if (ts.length) all = all.concat([ts[Math.floor(ts.length * 0.02)], ts[Math.ceil(ts.length * 0.98) - 1]]);
-      var lo = Math.min.apply(null, all), hi = Math.max.apply(null, all), pad = 0.12 * (hi - lo || 1);
-      lo -= pad; hi += pad;
-      function ty(v) { return M2.t + ph2 - (Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo) * ph2; }
-      clear(ax2);
-      var st = niceStep((hi - lo) / 4);
-      for (var v = Math.ceil(lo / st) * st; v <= hi; v += st) {
-        el('line', { x1: M2.l, x2: M2.l + pw2, y1: ty(v), y2: ty(v), stroke: Math.abs(v) < 1e-9 ? '#bbb' : '#f0f0f0' }, ax2);
-        el('text', { x: M2.l - 6, y: ty(v) + 4, 'text-anchor': 'end', class: 'ts-tick' }, ax2).textContent = +v.toFixed(1);
-      }
-      for (var tt = Math.ceil(YL * 2) / 2; tt <= YH; tt += 0.5) el('text', { x: bx(tt), y: M2.t + ph2 + 14, 'text-anchor': 'middle', class: 'ts-tick' }, ax2).textContent = tt;
-      cNow.setAttribute('d', ys.map(function (y, i) { return (i ? 'L' : 'M') + bx(y).toFixed(1) + ',' + ty(now[i]).toFixed(1); }).join(''));
-      cTgt.setAttribute('d', ys.map(function (y, i) { return (i ? 'L' : 'M') + bx(y).toFixed(1) + ',' + ty(tgt[i]).toFixed(1); }).join(''));
-      clear(resG); clear(dotG);
-      var loss = 0, cnt = 0, nNext = 0;
-      batch.forEach(function (s) {
-        if (s.y < YL || s.y > YH) return;
-        var pred = score(rowA, s.y, k);
-        loss += (s.t - pred) * (s.t - pred); cnt++; if (s.kind === 'next') nNext++;
-        el('line', { x1: bx(s.y), x2: bx(s.y), y1: ty(pred), y2: ty(s.t), stroke: s.kind === 'next' ? NEXT : ACCENT, 'stroke-opacity': 0.35 }, resG);
-        el('circle', { cx: bx(s.y), cy: ty(s.t), r: s.kind === 'next' ? 4.5 : 3.5, fill: s.kind === 'next' ? NEXT : ACCENT, 'fill-opacity': s.kind === 'next' ? 1 : 0.6 }, dotG);
+      // dashed levels at p_{k_i}(g+) and p_{k_i+dk}(g+), red arrow between them in the gap
+      var x1 = px(1, g), x2 = px(2, g), mid = (SLOTS[1] + PWS[1] + SLOTS[2]) / 2;
+      dl1.setAttribute('x1', x1); dl1.setAttribute('x2', mid + 30); dl1.setAttribute('y1', gy[1]); dl1.setAttribute('y2', gy[1]);
+      dl2.setAttribute('x1', mid - 30); dl2.setAttribute('x2', x2); dl2.setAttribute('y1', gy[2]); dl2.setAttribute('y2', gy[2]);
+      dArrow.setAttribute('x1', mid); dArrow.setAttribute('x2', mid); dArrow.setAttribute('y1', gy[1]); dArrow.setAttribute('y2', gy[2]);
+      K.forEach(function (k, s) {
+        ticks[s].setAttribute('x1', ax(k)); ticks[s].setAttribute('x2', ax(k)); ticks[s].setAttribute('y1', AY - 8); ticks[s].setAttribute('y2', AY + 8);
+        if (s === 1 || s === 2) { var c = conn[s - 1]; c.setAttribute('x1', ax(k)); c.setAttribute('x2', SLOTS[s] + PWS[s] / 2); c.setAttribute('y1', AY - 9); c.setAttribute('y2', PB[s] + 32); }
       });
-      bOut.innerHTML = cnt ? '<span>minibatch: <b>' + cnt + '</b> targets (<span class="c-next">' + nNext + ' next</span>, <span class="c-fut">' + (cnt - nNext) + ' future</span>)</span>' +
-        '<span>squared error vs. current s<sub>θ</sub>: <b>' + (loss / cnt).toFixed(2) + '</b></span>' : '<span>Draw a minibatch to see the regression targets.</span>';
+      handle.setAttribute('cx', ax(K[1])); handle.setAttribute('cy', AY);
     }
 
-    function render() { renderTop(); renderBatch(); }
-    var timer = null, runBtn = document.getElementById('td-play');
-    function stopRun() { if (timer) clearInterval(timer); timer = null; runBtn.textContent = 'Run'; }
-    document.getElementById('td-step').addEventListener('click', function () { stopRun(); update(); drawBatch(); render(); });
-    runBtn.addEventListener('click', function () {
-      if (timer) return stopRun();
-      runBtn.textContent = 'Pause';
-      timer = setInterval(function () { update(); drawBatch(); render(); if (n >= 60) stopRun(); }, 280);
+    tex(formula, '\\log \\frac{p_{k+\\Delta k}(g^+ \\mid s,a)}{p_{k}(g^+ \\mid s,a)} \\Big/ \\Delta k \\;\\approx\\; \\partial_k \\log p_k(g^+ \\mid s,a)');
+    kSl.addEventListener('input', function () { state.k = +kSl.value; render(); });
+    dkSl.addEventListener('input', function () { state.dk = +dkSl.value; render(); });
+    gSl.addEventListener('input', function () { state.g = +gSl.value; render(); });
+    // drag g+ in any panel, drag k_i on the axis
+    var drag = null;
+    function svgPt(e) { var r = strip.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H]; }
+    function apply(e) {
+      var p = svgPt(e);
+      if (drag === 'k') state.k = Math.max(0, Math.min(0.95, (p[0] - AX0) / (AX1 - AX0)));
+      else {
+        var s = 0; for (var i = 0; i < 4; i++) if (p[0] >= SLOTS[i] - 10) s = i;
+        state.g = Math.max(-4.4, Math.min(4.4, XMIN + (p[0] - SLOTS[s]) / PWS[s] * (XMAX - XMIN)));
+      }
+      render();
+    }
+    strip.addEventListener('pointerdown', function (e) {
+      var p = svgPt(e);
+      drag = p[1] > AY - 22 && p[0] > AX0 - 10 && p[0] < AX1 + 10 ? 'k' : 'g';
+      strip.setPointerCapture(e.pointerId); apply(e);
     });
-    document.getElementById('td-reset').addEventListener('click', function () { stopRun(); reset(); render(); });
-    document.getElementById('td-sample').addEventListener('click', function () { drawBatch(); renderBatch(); });
-    kSl.addEventListener('input', function () { k = +kSl.value; drawBatch(); renderBatch(); });
-    mcBox.addEventListener('change', renderTop);
-    reset(); drawBatch(); render();
+    strip.addEventListener('pointermove', function (e) { if (drag) apply(e); });
+    strip.addEventListener('pointerup', function () { drag = null; });
+    render();
   }
 
   // ---------------------------------------------------------------------------
@@ -588,10 +434,12 @@
     'GTSE-b₀': 0.82, 'GTSE-b₂': 0.88, 'GTSE-b₁₀': 0.88, 'GTSE-b': 0.96, 'GTSE-r': 0.95, 'GTSE': 0.96 };
   var rankImg = new Image();
   rankImg.src = 'rank_final.png';
+  // Panel left edges and size measured from rank_final.png (white gaps between subplots).
+  var PANEL_X = [8, 348, 689, 1029, 1370, 1710, 2050], PANEL_Y = [0, 378], PANEL_W = 343, PANEL_H = 368;
   function drawPanel(cv, name) {
-    var c = PANELS[name], sx = c[0] * 341, sy = c[1] ? 380 : 0, sh = c[1] ? 366 : 373;
-    cv.width = 340; cv.height = sh;
-    function go() { var ctx = cv.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 340, sh); ctx.drawImage(rankImg, sx, sy, 340, sh, 0, 0, 340, sh); }
+    var c = PANELS[name], sx = PANEL_X[c[0]], sy = PANEL_Y[c[1]];
+    cv.width = PANEL_W; cv.height = PANEL_H;
+    function go() { var ctx = cv.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, PANEL_W, PANEL_H); ctx.drawImage(rankImg, sx, sy, PANEL_W, PANEL_H, 0, 0, PANEL_W, PANEL_H); }
     rankImg.complete && rankImg.naturalWidth ? go() : rankImg.addEventListener('load', go);
   }
   function colorFor(name) {
@@ -636,12 +484,12 @@
     var root = document.getElementById('leg-toggle');
     if (!root) return;
     var Ls = [
-      { lab: 'L = 0', name: 'GTSE-b₀', rank: 'δ', toy: 0.82, far: 0.50, sr: '12±5' },
-      { lab: 'L = 2', name: 'GTSE-b₂', rank: '3δ', toy: 0.88, far: 0.51, sr: '21±10' },
-      { lab: 'L = 10', name: 'GTSE-b₁₀', rank: '11δ', toy: 0.88, far: 0.52, sr: '19±9' },
-      { lab: 'L = ∞', name: 'GTSE-b', rank: 'unbounded', toy: 0.96, far: 0.53, sr: '25±4' }
+      { lab: 'L = 0', name: 'GTSE-b₀', toy: 0.82 },
+      { lab: 'L = 2', name: 'GTSE-b₂', toy: 0.88 },
+      { lab: 'L = 10', name: 'GTSE-b₁₀', toy: 0.88 },
+      { lab: 'L = ∞', name: 'GTSE-b', toy: 0.96 }
     ];
-    var cv = document.getElementById('leg-canvas'), stats = document.getElementById('leg-stats');
+    var cv = document.getElementById('leg-canvas');
     var btns = Ls.map(function (d, i) {
       var b = document.createElement('button'); b.className = 'seg-btn'; b.textContent = d.lab;
       b.addEventListener('click', function () { show(i); }); root.appendChild(b); return b;
@@ -672,8 +520,6 @@
       btns.forEach(function (b, j) { b.classList.toggle('is-active', j === i); });
       dots.forEach(function (c, j) { c.setAttribute('fill', j === i ? ACCENT : '#fff'); c.setAttribute('r', j === i ? 6.5 : 5); });
       drawPanel(cv, d.name);
-      stats.innerHTML = [['rank ≤ (L+1)δ', d.rank], ['toy-MDP ρ', d.toy.toFixed(2)], ['pointmaze ρ (far)', d.far.toFixed(2)], ['pointmaze success', d.sr + '%']]
-        .map(function (s) { return '<div class="stat"><div class="v">' + s[1] + '</div><div class="k">' + s[0] + '</div></div>'; }).join('');
     }
     show(0);
   }
@@ -789,7 +635,7 @@
   document.addEventListener('DOMContentLoaded', function () {
     initOccupancy();
     initExplorer();
-    initTD();
+    initPathFigure();
     initGallery();
     initLegendre();
     barChart('pm-chart', 'pm-table', { yLabel: 'value', initial: 2, label: function (n) { return n.replace('ρ (near)', 'ρ near goals').replace('ρ (far)', 'ρ far goals'); } });
