@@ -485,7 +485,7 @@
       <div class="rq" id="rq3">
         <div class="rq-q"><span class="rq-n">Q2.</span>Where does GTSE's representational capacity come from?</div>
         <div class="answer"><b class="short">From occupancy modeling along probability paths.</b> We use the truncated Legendre decomposition to empirically analyse the effect of representational capacity. On the toy MDP, \(\rho\) rises from 0.82 at \(L=0\) to 0.96 at \(L=\infty\) (no truncation). On pointmaze, success rises from 12% to 25%. Even \(L = 0\) beats every baseline, so training along probability paths helps on its own. Surprisingly, GTSE-r, which learns explicit state-action and goal representations, also performs well: \(\rho = 0.95\) on the toy MDP and 25 ± 2% success on pointmaze.</div>
-        <p style="font-size: 16px;"><strong>Step through \(L\)</strong> to watch the far states (yellow) move onto the diagonal.</p>
+        <p style="font-size: 16px;"><strong>Step through \(L\)</strong> to watch the far states (yellow) move onto the diagonal, and select <strong>GTSE-r</strong> to compare.</p>
         <div class="seg-toggle" id="leg-toggle"></div>
         <div class="gallery">
           <canvas id="leg-canvas"></canvas>

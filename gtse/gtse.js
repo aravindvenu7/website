@@ -487,8 +487,10 @@
       { lab: 'L = 0', name: 'GTSE-b₀', toy: 0.82 },
       { lab: 'L = 2', name: 'GTSE-b₂', toy: 0.88 },
       { lab: 'L = 10', name: 'GTSE-b₁₀', toy: 0.88 },
-      { lab: 'L = ∞', name: 'GTSE-b', toy: 0.96 }
+      { lab: 'L = ∞', name: 'GTSE-b', toy: 0.96 },
+      { lab: 'GTSE-r', name: 'GTSE-r', toy: 0.95 }  // explicit-representation variant, shown apart from the L sweep
     ];
+    var NL = 4;
     var cv = document.getElementById('leg-canvas');
     var btns = Ls.map(function (d, i) {
       var b = document.createElement('button'); b.className = 'seg-btn'; b.textContent = d.lab;
@@ -507,14 +509,16 @@
     el('text', { x: M.l + 4, y: y(0.78) + 13, class: 'ts-tick' }, svg).textContent = 'best baseline 0.78';
     el('line', { x1: M.l, x2: M.l + pw, y1: y(0.96), y2: y(0.96), stroke: ACCENT, 'stroke-dasharray': '4 3', 'stroke-opacity': 0.5 }, svg);
     el('text', { x: M.l + 4, y: y(0.96) - 5, class: 'ts-tick' }, svg).textContent = 'GTSE 0.96';
-    el('path', { d: Ls.map(function (d, i) { return (i ? 'L' : 'M') + x(i) + ',' + y(d.toy); }).join(''), fill: 'none', stroke: ACCENT2, 'stroke-width': 2 }, svg);
+    el('path', { d: Ls.slice(0, NL).map(function (d, i) { return (i ? 'L' : 'M') + x(i) + ',' + y(d.toy); }).join(''), fill: 'none', stroke: ACCENT2, 'stroke-width': 2 }, svg);
+    el('line', { x1: (x(NL - 1) + x(NL)) / 2, x2: (x(NL - 1) + x(NL)) / 2, y1: M.t, y2: M.t + ph, stroke: '#ddd' }, svg);
     var dots = Ls.map(function (d, i) {
       el('text', { x: x(i), y: H - 8, 'text-anchor': 'middle', class: 'ts-tick' }, svg).textContent = d.lab;
       var c = el('circle', { cx: x(i), cy: y(d.toy), r: 5, fill: '#fff', stroke: ACCENT, 'stroke-width': 2, style: 'cursor:pointer' }, svg);
+      if (i === NL) el('text', { x: x(i) + 10, y: y(d.toy) + 4, class: 'ts-tick' }, svg).textContent = d.toy.toFixed(2);
       c.addEventListener('click', function () { show(i); });
       return c;
     });
-    el('text', { x: M.l, y: 10, class: 'ts-tick' }, svg).textContent = 'toy-MDP ρ vs. truncation order';
+    el('text', { x: M.l, y: 10, class: 'ts-tick' }, svg).textContent = 'toy-MDP ρ: GTSE-b by truncation order L, and GTSE-r';
     function show(i) {
       var d = Ls[i];
       btns.forEach(function (b, j) { b.classList.toggle('is-active', j === i); });
