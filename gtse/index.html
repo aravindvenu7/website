@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
 
   <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;700&display=swap" rel="stylesheet">
 
   <!-- KaTeX -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -44,6 +44,8 @@
       transition-timing-function: linear;
     }
 
+    p, li { line-height: 1.7; }
+
     .header {
       font-size: 18pt;
       color: #111;
@@ -59,7 +61,7 @@
       background: white;
       z-index: 100;
       border-bottom: 1px solid #ddd;
-      padding: 12px 0;
+      padding: 10px 0;
     }
 
     #topnav .nav-inner {
@@ -225,11 +227,11 @@
     .ts-controls label { display: flex; align-items: center; gap: 8px; margin: 0; }
     .ts-controls input[type=range] { width: 130px; accent-color: #641e16; }
     .ts-num { font-variant-numeric: tabular-nums; min-width: 34px; color: #641e16; }
-    .ts-btn { background: white; border: 1px solid #641e16; color: #641e16; border-radius: 4px; padding: 3px 14px; font-size: 13px; cursor: pointer; }
+    .ts-btn { background: white; border: 1px solid #641e16; color: #641e16; border-radius: 4px; padding: 3px 14px; font-size: 13px; cursor: pointer; font-family: 'Barlow', sans-serif; }
     .ts-btn:hover { background: #641e16; color: white; }
+    .ts-btn:disabled { opacity: .4; pointer-events: none; }
     .ts-readout { display: flex; flex-wrap: wrap; gap: 6px 24px; margin-top: 10px; font-size: 14px; color: #444; }
     .ts-readout b { color: #641e16; font-weight: 500; font-variant-numeric: tabular-nums; }
-
     .chart { margin: 18px 0 4px; }
     .bar-svg { width: 100%; display: block; }
     .bar-item { transition: opacity .18s ease; cursor: default; }
@@ -249,9 +251,52 @@
     table.bt-table .col-hot { background: #f6e6e3 !important; }
     table.bt-table .col-dim { opacity: 0.35; }
 
+    .rq { margin: 40px 0 0; }
+    .rq-q { font-size: 19px; font-weight: 500; margin-bottom: 6px; }
+    .rq-q .rq-n { color: #641e16; margin-right: 6px; }
+    .answer { border-left: 3px solid #111; padding: 4px 0 4px 16px; margin: 16px 0; font-size: 16px; }
+    .answer b.short { font-weight: 700; }
+
+    details.full-table { margin: 10px 0 0; }
+    details.full-table summary { font-size: 14px; color: #641e16; cursor: pointer; }
+
+    /* Occupancy animation */
+    .occ-wrap { display: flex; gap: 16px; align-items: stretch; }
+    .occ-wrap canvas { flex: 1 1 auto; min-width: 0; width: 100%; border-radius: 6px; background: #fcfcfc; display: block; }
+    .occ-side { flex: 0 0 170px; display: flex; flex-direction: column; font-size: 14px; }
+    .wbars { display: flex; align-items: flex-end; gap: 6px; height: 120px; margin-top: 6px; border-bottom: 1px solid #bbb; }
+    .wbar { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+    .wbar span { display: block; background: #c27c73; border-radius: 2px 2px 0 0; transition: height .2s ease; }
+    .wbar.past span { background: #641e16; }
+    .wlabs { display: flex; gap: 6px; font-size: 11px; color: #999; margin-top: 2px; }
+    .wlabs span { flex: 1; text-align: center; }
+
+    /* TD loss visualization */
+    .legend { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 13px; color: #555; margin: 4px 0; }
+    .legend i { display: inline-block; width: 14px; height: 10px; margin-right: 6px; vertical-align: middle; border-radius: 2px; }
+    .legend i.line { height: 0; border-top: 2px dashed #111; border-radius: 0; }
+    .legend i.dot { height: 0; border-top: 2px dotted #999; border-radius: 0; }
+    .c-next { color: #d4883e; font-weight: 500; }
+    .c-fut { color: #641e16; font-weight: 500; }
+
+    /* Estimator gallery */
+    .gallery { display: flex; gap: 16px; align-items: flex-start; }
+    .gallery canvas { width: 300px; max-width: 45%; flex: 0 0 auto; display: block; }
+    .gallery .g-bars { flex: 1; min-width: 0; }
+    .stat-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+    .stat { flex: 1 1 120px; border: 1px solid #e3e3e3; background: white; border-radius: 6px; padding: 8px 12px; }
+    .stat .v { font-size: 22px; font-weight: 500; color: #641e16; font-variant-numeric: tabular-nums; }
+    .stat .k { font-size: 12px; color: #777; }
+    .big-num { font-size: 22px; color: #641e16; font-weight: 500; font-variant-numeric: tabular-nums; }
+    .gallery .g-bars svg { width: 100%; display: block; }
+    .g-row { cursor: pointer; }
+    .g-row text { font-family: 'Barlow', sans-serif; }
+
     @media (max-width: 700px) {
       .float-fig { float: none !important; width: 100% !important; margin: 0 0 16px !important; }
-      .two-up, .ts-panels { flex-direction: column; }
+      .two-up, .ts-panels, .occ-wrap, .gallery { flex-direction: column; }
+      .occ-side { flex-basis: auto; }
+      .gallery canvas { max-width: 100%; width: 100%; }
     }
   </style>
 </head>
@@ -263,8 +308,9 @@
     <div class="nav-inner">
       <a class="back-link" href="../">&#8592; Aravind Venugopal</a>
       <div class="nav-links">
-        <a href="#" class="disabled">Paper</a>
-        <a href="#" class="disabled">Code</a>
+        <a href="#occupancy">Occupancy</a>
+        <a href="#method">Method</a>
+        <a href="#questions">Results</a>
         <a href="#citation">BibTeX&#8595;</a>
       </div>
     </div>
@@ -278,12 +324,11 @@
       <div>
         <span class="venue-badge">Preprint</span>
       </div>
-      <!-- TODO: fill in authors and affiliations -->
       <div class="authors mt-3">
-        Aravind Venugopal¹, [co-authors]
+        Aravind Venugopal¹, Grace Liu¹, Jeff Schneider¹, Benjamin Eysenbach²
       </div>
       <div class="affiliations">
-        ¹ Carnegie Mellon University
+        ¹ Carnegie Mellon University &nbsp;·&nbsp; ² Princeton University
       </div>
       <div style="margin-top: 20px;">
         <!-- TODO: add paper and code links, then remove "disabled" -->
@@ -318,40 +363,41 @@
 
     <div class="section-divider"></div>
 
-    <!-- Motivation -->
-    <div>
-      <div class="header">How well do existing methods estimate occupancy density?</div>
-      <p style="font-size: 16px; line-height: 1.7;">
-        We build a 5-step toy MDP in \(\mathbb{R}^2\) with a branching, multimodal occupancy measure and compare each method's predicted occupancy density against the ground-truth \(\log d^{\pi_D}\) over 50 goals and 300 state-action pairs per goal. Most baselines estimate it poorly. The best baselines (CRL, TMD, TD-flows) reach Spearman \(\rho = 0.78\); GTSE reaches \(\rho = 0.96\).
-      </p>
-      <div style="margin: 16px 0 0;">
-        <img src="rank_final.png" alt="Normalized rank of predicted vs ground-truth log occupancy density for baselines and GTSE variants" style="width:100%; display:block;">
-        <p class="fig-caption">Normalized rank of estimated occupancy density vs. normalized rank of ground-truth \(\log d^{\pi_D}\) on the toy MDP (colored by distance of state from origin).</p>
-      </div>
+    <!-- Occupancy measure -->
+    <div id="occupancy">
+      <div class="header">What is an occupancy measure?</div>
+      <p style="font-size: 16px;">Start an agent at state \(s\) and take action \(a\). The <strong>occupancy measure</strong> is the distribution over the states \(s^+\) it visits in the future, with a state reached \(t\) steps later weighted by \(\gamma^t\):</p>
+      \[ d^{\pi}(s^+ \mid s,a) = (1-\gamma)\sum_{t=0}^{\infty}\gamma^t\, P(s_{t+1}=s^+ \mid s,a,\pi) \]
+      <p style="font-size: 16px;">In goal-conditioned RL, \(d^{\pi}(g \mid s,a)\) equals the Q-value for reaching goal \(g\). Choosing the action that makes \(g\) most likely is choosing the best action, so a good density estimate is a good value estimate.</p>
+      <p style="font-size: 16px;">Below is the 5-step toy MDP from the paper, in \(\mathbb{R}^2\). Rollouts start at \(s\). After step 2, each one commits to one of two branches, which makes the occupancy measure <strong>multimodal</strong>. Each rollout adds weight \(\gamma^t\) to the heatmap when it reaches step \(t+1\). Move \(\gamma\) to shift weight between the near and far future. With \(\gamma \to 0\), only the next state is left: \(d^{\pi} = p(s' \mid s,a)\). <strong>Hover over the map</strong> to read the density at any goal.</p>
 
-      <p style="font-size: 16px; line-height: 1.7; margin-top: 20px;">
-        These errors carry over to control. On <strong>pointmaze-large-diverse</strong>, we measure \(\rho\) for nearby and far-away goals and the success rate with best-of-16 action selection. Baselines degrade on far goals and the best one (CRL) reaches 3% success. GTSE reaches 38%.
-      </p>
-      <div class="chart" id="pm-chart"></div>
-      <div style="overflow-x:auto; margin: 16px 0 6px;">
-        <table class="bt-table" id="pm-table">
-          <caption style="caption-side:bottom; font-size:15px; color:#111; text-align:left; padding-top:8px; font-style:italic;">Spearman \(\rho\) with ground-truth \(\log d^{\pi_D}\) and success rate (%) on pointmaze-large-diverse over 4 seeds (± 95% bootstrapped CI). Click a row or button to switch the chart; hover a method to highlight it.</caption>
-          <thead>
-            <tr><th></th><th>CRL</th><th>FB</th><th>TD-JEPA</th><th>BYOL-γ</th><th>Dual GR</th><th>TMD</th><th>TD-flows</th><th>GTSE-b₀</th><th>GTSE-b₂</th><th>GTSE-b₁₀</th><th>GTSE-b</th><th>GTSE-r</th><th class="bt-ours">GTSE</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>ρ (near)</td><td>0.56</td><td>0.11</td><td>0.25</td><td>0.33</td><td>−0.07</td><td>0.56</td><td>0.00</td><td>0.56</td><td>0.60</td><td>0.60</td><td>0.60</td><td>0.60</td><td class="bt-ours"><strong>0.63</strong></td></tr>
-            <tr><td>ρ (far)</td><td>0.14</td><td>0.00</td><td>0.08</td><td>0.16</td><td>−0.09</td><td>0.30</td><td>0.05</td><td>0.50</td><td>0.51</td><td>0.52</td><td>0.53</td><td>0.52</td><td class="bt-ours"><strong>0.55</strong></td></tr>
-            <tr class="bt-mean"><td>Success rate</td><td>3±6</td><td>0±0</td><td>0±0</td><td>0±0</td><td>0±0</td><td>0±0</td><td>0±0</td><td>12±5</td><td>21±10</td><td>19±9</td><td>25±4</td><td>25±2</td><td class="bt-ours-mean">38±4</td></tr>
-          </tbody>
-        </table>
+      <div class="viz-card">
+        <div class="occ-wrap">
+          <canvas id="occ-canvas" aria-label="Animated rollouts of the toy MDP building up the occupancy measure heatmap"></canvas>
+          <div class="occ-side">
+            <div><strong>Weight per step</strong></div>
+            <div style="color:#777; font-size:12px;">\(\propto \gamma^t\) · dark = after the branch</div>
+            <div class="wbars" id="occ-wbars"></div>
+            <div class="wlabs"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
+            <div style="font-size:12px; color:#999; text-align:center;">step \(t+1\)</div>
+            <div style="margin-top: 14px;">Mass past the branch<br><b id="occ-past" class="big-num"></b></div>
+            <div style="margin-top: 10px;">\(d(g \mid s,a)\) at cursor<br><b id="occ-hover" class="big-num">–</b></div>
+          </div>
+        </div>
+        <div class="ts-controls">
+          <button id="occ-play" class="ts-btn">Pause</button>
+          <label>γ <input type="range" id="occ-gamma" min="0.05" max="0.99" step="0.01"> <span id="occ-gamma-val" class="ts-num"></span></label>
+          <button id="occ-ff" class="ts-btn">+1000 rollouts</button>
+          <button id="occ-clear" class="ts-btn">Clear</button>
+          <span id="occ-count" style="color:#777;"></span>
+        </div>
       </div>
     </div>
 
     <div class="section-divider"></div>
 
     <!-- Method -->
-    <div>
+    <div id="method">
       <div class="header">Method</div>
 
       <div style="text-align:center; margin: 20px 0;">
@@ -413,13 +459,48 @@
             <li style="margin-bottom: 10px;">Monte Carlo targets cannot stitch trajectory segments. We use the recursive structure of the occupancy measure to bootstrap time-score predictions from the next state-action pair:</li>
           </ul>
           <div class="prop-box">
-            \[ \mathcal{L}_{\text{GTSE}}(\theta) = (1-\gamma)\, \mathcal{L}_{\text{next}}(\theta) + \gamma\, \mathcal{L}_{\text{future}}(\theta), \qquad \forall (s,a,s',a') \in \mathcal{D} \]
-            \[ \mathcal{L}_{\text{next}}(\theta) = \mathbb{E}_{k,\, s'_k \mid s'}\Big[\lambda(k)\big(\partial_k \log p_k(s'_k \mid s') - s_\theta(s'_k, k, s, a)\big)^2\Big] \]
-            \[ \mathcal{L}_{\text{future}}(\theta) = \mathbb{E}_{s^+ \sim d^{\pi_D}(\cdot \mid s',a')}\, \mathbb{E}_{k,\, s^+_k \mid s^+}\Big[\lambda(k)\big(\operatorname{sg}[s_{\bar\theta}(s^+_k, k, s', a')] - s_\theta(s^+_k, k, s, a)\big)^2\Big] \]
+            \[ \mathcal{L}_{\text{GTSE}}(\theta) = (1-\gamma)\, {\color{#d4883e}\mathcal{L}_{\text{next}}(\theta)} + \gamma\, {\color{#641e16}\mathcal{L}_{\text{future}}(\theta)}, \qquad \forall (s,a,s',a') \in \mathcal{D} \]
+            \[ {\color{#d4883e}\mathcal{L}_{\text{next}}(\theta)} = \mathbb{E}_{k,\, s'_k \mid s'}\Big[\lambda(k)\big(\partial_k \log p_k(s'_k \mid s') - s_\theta(s'_k, k, s, a)\big)^2\Big] \]
+            \[ {\color{#641e16}\mathcal{L}_{\text{future}}(\theta)} = \mathbb{E}_{s^+ \sim d^{\pi_D}(\cdot \mid s',a')}\, \mathbb{E}_{k,\, s^+_k \mid s^+}\Big[\lambda(k)\big(\operatorname{sg}[s_{\bar\theta}(s^+_k, k, s', a')] - s_\theta(s^+_k, k, s, a)\big)^2\Big] \]
           </div>
           <ul style="padding-left: 20px;">
+            <li style="margin-bottom: 10px;"><span class="c-next">Next</span>: noise the observed next state \(s'\) and regress on the closed-form conditional time score \(\partial_k \log p_k(s'_k \mid s') = \frac{\alpha_k\alpha_k'}{1-\alpha_k^2}\big(\dim(S) - \|\epsilon\|^2\big) + \frac{\alpha_k'}{\sqrt{1-\alpha_k^2}}\epsilon^\top s'\). On its own, this learns the \(\gamma \to 0\) occupancy: the next-state distribution.</li>
+            <li style="margin-bottom: 10px;"><span class="c-fut">Future</span>: sample a future state from the model at \((s',a')\), noise it, and regress on the model's own (target-network) time score at \((s',a')\). This TD bootstrap stitches trajectory segments together.</li>
             <li>At inference, the log-density of any \(s^+\) is a sum of \(N\) time-score evaluations: \(\log \hat{d}^{\pi_D}(s^+ \mid s,a) = \frac{1}{N}\sum_{i=0}^{N-1} s_\theta(s^+, i/N, s, a) + \log p_0(s^+)\).</li>
           </ul>
+          <div class="subheading"><strong>Interactive: how the loss learns, and why TD matters</strong></div>
+          <p style="font-size: 16px; line-height: 1.7;">A 1D corridor. The dataset holds trajectories that run <b>A → B</b> and others that run <b>B → C</b>. <strong>No trajectory goes from A to C.</strong> Press <em>TD update</em> to apply the loss to its fixed point one round at a time. The top panel shows the estimated occupancy from A, split into its <span class="c-next">next</span> and <span class="c-fut">future</span> parts. Monte Carlo targets (Eq. 4) never put mass on C. TD reaches it by bootstrapping through B. The bottom panel shows one minibatch of the loss at noise level \(k\). Each dot is a regression target, and \(s_\theta\) is pulled toward their average.</p>
+          <div class="viz-card" id="td-card">
+            <div class="legend">
+              <span><i style="background:#d4883e"></i>(1−γ) · next-state term</span>
+              <span><i style="background:#641e16"></i>γ · bootstrapped future term</span>
+              <span><i class="line"></i>true \(d(\cdot \mid A)\)</span>
+              <span id="td-mc-leg"><i class="dot"></i>Monte Carlo (no TD)</span>
+            </div>
+            <div id="td-density"></div>
+            <div class="ts-controls">
+              <button id="td-step" class="ts-btn">TD update</button>
+              <button id="td-play" class="ts-btn">Run</button>
+              <button id="td-reset" class="ts-btn">Reset</button>
+              <label><input type="checkbox" id="td-mc" checked style="accent-color:#641e16;"> show Monte Carlo</label>
+            </div>
+            <div id="td-readout" class="ts-readout"></div>
+
+            <div style="border-top: 1px solid #eee; margin: 16px 0 8px;"></div>
+            <div class="legend">
+              <span><i style="background:#641e16; height:3px;"></i>current \(s_\theta(s_k^+, k \mid A)\)</span>
+              <span><i class="dot" style="border-top-color:#111"></i>average of the targets (after the update)</span>
+              <span><i style="background:#d4883e; border-radius:50%; width:9px; height:9px;"></i>next target</span>
+              <span><i style="background:#641e16; border-radius:50%; width:9px; height:9px; opacity:.6"></i>future target</span>
+            </div>
+            <div id="td-batch"></div>
+            <div class="ts-controls">
+              <button id="td-sample" class="ts-btn">Draw minibatch</button>
+              <label>noise level k <input type="range" id="td-k" min="0.1" max="0.95" step="0.01"> <span id="td-k-val" class="ts-num"></span></label>
+            </div>
+            <div id="td-batch-readout" class="ts-readout"></div>
+            <p style="font-size: 13px; color:#777; margin: 8px 0 0;">At each noised point \(s_k^+\), the targets average to the time score of the mixture \((1-\gamma)\cdot\)next \(+\ \gamma\cdot\)future, which is where a TD update moves \(s_\theta\). Corridor positions are rescaled to roughly unit scale for the path. γ = 0.93.</p>
+          </div>
         </li>
         <li style="margin-bottom: 20px;">
           <strong>Why it works: multiscale future prediction</strong>
@@ -427,7 +508,7 @@
             <li style="margin-bottom: 10px;">If the time score factorizes as \(\phi(s,a,k)^\top \psi(g,k)\), the time-score integral has an exact <strong>Legendre decomposition</strong>:
               \[ \log d^{\pi_D}(g \mid s,a) = \sum_{l=0}^{\infty} \hat{\phi}_l(s,a)^\top \hat{\psi}_l(g) + \log p_0(g) \]
             </li>
-            <li style="margin-bottom: 0;">Truncating at order \(L\) gives rank up to \((L+1)\delta\). Prior self-predictive methods learn rank-\(\delta\) approximations, which corresponds to \(L = 0\). On the toy MDP, \(\rho\) increases from 0.82 (GTSE-\(b_0\)) to 0.96 as \(L\) grows.</li>
+            <li style="margin-bottom: 0;">Truncating at order \(L\) gives rank up to \((L+1)\delta\). Prior self-predictive methods learn rank-\(\delta\) approximations, which corresponds to \(L = 0\).</li>
           </ul>
         </li>
         <li>
@@ -438,68 +519,116 @@
 
     <div class="section-divider"></div>
 
-    <!-- Evaluation -->
-    <div>
-      <div class="header">Evaluation</div>
+    <!-- Research questions -->
+    <div id="questions">
+      <div class="header">Research questions</div>
+      <p style="font-size: 16px;">Each question below comes with its answer and the data behind it.</p>
 
-      <div class="subheading"><strong>Goal-conditioned RL on OGBench</strong></div>
-      <p style="font-size: 16px; line-height: 1.7;">
-        We evaluate on long-horizon <a href="https://seohong.me/projects/ogbench/" target="_blank" rel="noopener noreferrer">OGBench</a> tasks across maze navigation, cube, puzzle and scene, including noisy datasets. All methods use best-of-\(M\) action selection with a flow-matching BC policy to isolate the quality of the estimator. GTSE averages 37.9%: <strong>2×</strong> the strongest baseline (TD-JEPA, 18.6%) and <strong>6×</strong> the weakest (TMD, 6.4%).
-      </p>
-      <div class="chart" id="gcrl-chart"></div>
-      <div style="overflow-x:auto; margin: 16px 0 6px;">
-        <table class="bt-table" id="gcrl-table">
-          <caption style="caption-side:bottom; font-size:15px; color:#111; text-align:left; padding-top:8px; font-style:italic;">Overall average success rate (%) across 5 test-time goals over 8 seeds per task (± 95% bootstrapped CI). Bold = best. Click a row or button to switch the chart; hover a method to highlight it.</caption>
-          <thead>
-            <tr><th>Dataset</th><th>GCBC</th><th>CRL</th><th>FB</th><th>TD-JEPA</th><th>BYOL-γ</th><th>Dual GR</th><th>TMD</th><th>SMORE</th><th>TD-flows</th><th>NF</th><th class="bt-ours">GTSE-r</th><th class="bt-ours">GTSE</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>scene-play</td><td>20±4</td><td>25±5</td><td>6±2</td><td>31±4</td><td>17±2</td><td>19±15</td><td>7±2</td><td>13±4</td><td>35±4</td><td>9±3</td><td class="bt-ours">60±5</td><td class="bt-ours"><strong>69±6</strong></td></tr>
-            <tr><td>scene-noisy</td><td>10±1</td><td>7±3</td><td>2±1</td><td>24±3</td><td>9±3</td><td>12±7</td><td>7±1</td><td>3±2</td><td>19±4</td><td>5±2</td><td class="bt-ours">37±4</td><td class="bt-ours"><strong>55±6</strong></td></tr>
-            <tr><td>puzzle-4x4-play</td><td>1±1</td><td>2±1</td><td>22±8</td><td><strong>36±3</strong></td><td>2±1</td><td>17±6</td><td>1±1</td><td>0±1</td><td>4±2</td><td>1±1</td><td class="bt-ours">26±6</td><td class="bt-ours"><strong>40±4</strong></td></tr>
-            <tr><td>puzzle-4x4-noisy</td><td>1±0</td><td>0±0</td><td>6±2</td><td>9±3</td><td>0±0</td><td>2±3</td><td>0±0</td><td>0±0</td><td>1±0</td><td>1±0</td><td class="bt-ours">9±2</td><td class="bt-ours"><strong>22±2</strong></td></tr>
-            <tr><td>cube-triple-play</td><td>5±2</td><td>2±1</td><td>1±0</td><td>1±1</td><td>0±1</td><td>13±2</td><td>1±1</td><td>2±3</td><td>16±3</td><td>0±0</td><td class="bt-ours">7±1</td><td class="bt-ours"><strong>18±1</strong></td></tr>
-            <tr><td>cube-triple-noisy</td><td>2±1</td><td>1±1</td><td>0±1</td><td>0±0</td><td>0±1</td><td>4±2</td><td>0±0</td><td>1±1</td><td><strong>8±2</strong></td><td>1±1</td><td class="bt-ours">4±1</td><td class="bt-ours"><strong>8±1</strong></td></tr>
-            <tr><td>antmaze-large-navigate</td><td>34±4</td><td>73±6</td><td>15±8</td><td>29±6</td><td>32±5</td><td>43±6</td><td>29±4</td><td>35±3</td><td>30±9</td><td>51±16</td><td class="bt-ours"><strong>78±4</strong></td><td class="bt-ours">53±4</td></tr>
-            <tr class="bt-mean"><td><strong>Mean</strong></td><td>10.4</td><td>15.7</td><td>7.4</td><td>18.6</td><td>8.6</td><td>15.7</td><td>6.4</td><td>7.7</td><td>16.1</td><td>9.7</td><td class="bt-ours">31.6</td><td class="bt-ours-mean">37.9</td></tr>
-          </tbody>
-        </table>
+      <!-- Q1 -->
+      <div class="rq" id="rq1">
+        <div class="rq-q"><span class="rq-n">Q1.</span>How well do existing methods estimate occupancy density?</div>
+        <div class="answer"><b class="short">Poorly, even on a 5-step MDP.</b> On the toy MDP above, the best baselines (CRL, TMD, TD-flows) reach Spearman \(\rho = 0.78\) with the ground-truth \(\log d^{\pi_D}\). FB, TD-JEPA and Dual GR are near chance (0.19, 0.09, 0.19). CRL and TMD rank states near the origin well, where most of the mass is, but fail on far states.</div>
+        <p style="font-size: 16px;">Each panel plots the rank of a method's predicted density against the rank of the ground truth, over 50 goals × 300 state-action pairs. A perfect estimator puts every point on the <span style="color:#c0392b">red diagonal</span>. Colour is the state's distance from the origin, so yellow means far. <strong>Click or hover a method</strong> to view its predictions.</p>
+        <div class="gallery" id="gal-all"></div>
       </div>
 
-      <div class="subheading"><strong>Do GTSE-\(r\) representations transfer to reward-based RL?</strong></div>
-      <div style="overflow: hidden;">
-        <div class="float-fig" style="float: right; margin: 0 0 12px 24px; text-align: center; width: 200px;">
-          <img src="scene-play.png" alt="OGBench scene environment" style="width: 200px; display: block; border-radius: 6px;">
-          <p class="fig-caption" style="max-width: 200px; margin: 6px 0 0; font-size: 13px;">scene-play</p>
+      <!-- Q2 -->
+      <div class="rq" id="rq2">
+        <div class="rq-q"><span class="rq-n">Q2.</span>Is GTSE a better estimator, and does that matter for control?</div>
+        <div class="answer"><b class="short">Yes, on both counts.</b> GTSE reaches \(\rho = 0.96\) on the toy MDP and stays on the diagonal for far states (select GTSE above). On <strong>pointmaze-large-diverse</strong>, baselines degrade on far goals (\(\rho \le 0.30\)), and the best one (CRL) succeeds 3% of the time with best-of-16 action selection. GTSE ranks actions best for both near (\(\rho = 0.63\)) and far (\(\rho = 0.55\)) goals and succeeds <strong>38%</strong> of the time, 12.5× CRL.</div>
+        <div class="chart" id="pm-chart"></div>
+        <details class="full-table">
+          <summary>Full table</summary>
+          <div style="overflow-x:auto; margin: 10px 0 6px;">
+            <table class="bt-table" id="pm-table">
+              <caption style="caption-side:bottom; font-size:15px; color:#111; text-align:left; padding-top:8px; font-style:italic;">Spearman \(\rho\) with ground-truth \(\log d^{\pi_D}\) and success rate (%) on pointmaze-large-diverse over 4 seeds (± 95% bootstrapped CI). Click a row to switch the chart; hover a method to highlight it.</caption>
+              <thead>
+                <tr><th></th><th>CRL</th><th>FB</th><th>TD-JEPA</th><th>BYOL-γ</th><th>Dual GR</th><th>TMD</th><th>TD-flows</th><th>GTSE-b₀</th><th>GTSE-b₂</th><th>GTSE-b₁₀</th><th>GTSE-b</th><th>GTSE-r</th><th class="bt-ours">GTSE</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>ρ (near)</td><td>0.56</td><td>0.11</td><td>0.25</td><td>0.33</td><td>−0.07</td><td>0.56</td><td>0.00</td><td>0.56</td><td>0.60</td><td>0.60</td><td>0.60</td><td>0.60</td><td class="bt-ours"><strong>0.63</strong></td></tr>
+                <tr><td>ρ (far)</td><td>0.14</td><td>0.00</td><td>0.08</td><td>0.16</td><td>−0.09</td><td>0.30</td><td>0.05</td><td>0.50</td><td>0.51</td><td>0.52</td><td>0.53</td><td>0.52</td><td class="bt-ours"><strong>0.55</strong></td></tr>
+                <tr class="bt-mean"><td>Success rate</td><td>3±6</td><td>0±0</td><td>0±0</td><td>0±0</td><td>0±0</td><td>0±0</td><td>0±0</td><td>12±5</td><td>21±10</td><td>19±9</td><td>25±4</td><td>25±2</td><td class="bt-ours-mean">38±4</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+      </div>
+
+      <!-- Q3 -->
+      <div class="rq" id="rq3">
+        <div class="rq-q"><span class="rq-n">Q3.</span>Where does GTSE's extra capacity come from?</div>
+        <div class="answer"><b class="short">From the higher-order Legendre terms.</b> We train the bilinear variant GTSE-b and keep only the first \(L\) Legendre terms at inference (GTSE-b\(_L\)). \(L = 0\) has rank \(\delta\), like prior self-predictive methods. On the toy MDP, \(\rho\) rises from 0.82 at \(L=0\) to 0.96 at \(L=\infty\). On pointmaze, success rises from 12% to 25%. Even \(L = 0\) beats every baseline, so training along probability paths helps on its own.</div>
+        <p style="font-size: 16px;"><strong>Step through \(L\)</strong> to watch the far states (yellow) move onto the diagonal.</p>
+        <div class="seg-toggle" id="leg-toggle"></div>
+        <div class="gallery">
+          <canvas id="leg-canvas"></canvas>
+          <div class="g-bars">
+            <div class="stat-row" id="leg-stats"></div>
+            <div id="leg-chart"></div>
+          </div>
         </div>
-        <p style="font-size: 16px; line-height: 1.7;">
-          We freeze each method's representation encoder and feed it to the critic of Flow Q-Learning (FQL) on the 5 reward-based <strong>scene-play</strong> tasks. GTSE-\(r\) gets the highest mean success rate (62.2%), above TD-JEPA (46.6%) and end-to-end vanilla FQL (58.2%), and improves task 4 by about 4× over vanilla FQL.
-        </p>
-      </div>
-      <div class="chart" id="rew-chart"></div>
-      <div style="overflow-x:auto; margin: 8px 0 6px;">
-        <table class="bt-table" id="rew-table">
-          <caption style="caption-side:bottom; font-size:15px; color:#111; text-align:left; padding-top:8px; font-style:italic;">Reward-based RL on scene-play with frozen representation encoders. Success rate (%) over 4 seeds (± 95% bootstrapped CI). Click a row or button to switch the chart; hover a method to highlight it.</caption>
-          <thead>
-            <tr><th>Task</th><th>CRL</th><th>FB</th><th>TD-JEPA</th><th>BYOL-γ</th><th>Dual GR</th><th>TMD</th><th>Vanilla FQL</th><th class="bt-ours">GTSE-r</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>task 1</td><td>67±6</td><td>58±33</td><td>98±5</td><td>51±27</td><td>37±7</td><td>1±2</td><td><strong>100±0</strong></td><td class="bt-ours"><strong>100±1</strong></td></tr>
-            <tr><td>task 2</td><td>14±12</td><td>17±19</td><td>32±22</td><td>8±8</td><td>4±3</td><td>0±0</td><td><strong>83±23</strong></td><td class="bt-ours"><strong>81±12</strong></td></tr>
-            <tr><td>task 3</td><td>27±13</td><td>1±2</td><td>85±11</td><td>10±6</td><td>11±9</td><td>0±0</td><td><strong>99±3</strong></td><td class="bt-ours">94±5</td></tr>
-            <tr><td>task 4</td><td>10±5</td><td>0±0</td><td><strong>18±14</strong></td><td>10±4</td><td>7±4</td><td>0±0</td><td>9±7</td><td class="bt-ours"><strong>36±18</strong></td></tr>
-            <tr><td>task 5</td><td>2±2</td><td>0±0</td><td>0±0</td><td>0±0</td><td>4±7</td><td>0±0</td><td>0±0</td><td class="bt-ours">0±0</td></tr>
-            <tr class="bt-mean"><td><strong>Mean</strong></td><td>24.0</td><td>15.2</td><td>46.6</td><td>15.8</td><td>12.6</td><td>0.2</td><td>58.2</td><td class="bt-ours-mean">62.2</td></tr>
-          </tbody>
-        </table>
       </div>
 
-      <div class="subheading"><strong>What affects GTSE performance?</strong></div>
-      <div class="two-up" style="display:flex; gap:16px; margin: 16px 0 8px; align-items:flex-start;">
-        <div style="flex:1; min-width:0;"><img src="kmax.png" alt="Effect of K_max on success rate" style="width:100%; display:block;"></div>
-        <div style="flex:1; min-width:0;"><img src="nfe.png" alt="Effect of number of time-score evaluations N on success rate" style="width:100%; display:block;"></div>
+      <!-- Q4 -->
+      <div class="rq" id="rq4">
+        <div class="rq-q"><span class="rq-n">Q4.</span>Does GTSE improve long-horizon goal-conditioned RL?</div>
+        <div class="answer"><b class="short">Yes, by 2× to 6×.</b> Across 7 <a href="https://seohong.me/projects/ogbench/" target="_blank" rel="noopener noreferrer">OGBench</a> datasets, GTSE averages <strong>37.9%</strong> success: 2× the strongest baseline (TD-JEPA, 18.6%) and 6× the weakest (TMD, 6.4%). GTSE-r is second (31.6%). GTSE is best on every manipulation dataset, including cube-triple. On antmaze, GTSE-r is ahead (78% vs 53%), likely because goal density there depends almost only on the agent's (x, y) position. All methods use best-of-16 action selection with the same flow-matching BC policy, so only the estimator differs.</div>
+        <div class="chart" id="gcrl-chart"></div>
+        <details class="full-table">
+          <summary>Full table</summary>
+          <div style="overflow-x:auto; margin: 10px 0 6px;">
+            <table class="bt-table" id="gcrl-table">
+              <caption style="caption-side:bottom; font-size:15px; color:#111; text-align:left; padding-top:8px; font-style:italic;">Overall average success rate (%) across 5 test-time goals over 8 seeds per task (± 95% bootstrapped CI). Bold = best. Click a row to switch the chart; hover a method to highlight it.</caption>
+              <thead>
+                <tr><th>Dataset</th><th>GCBC</th><th>CRL</th><th>FB</th><th>TD-JEPA</th><th>BYOL-γ</th><th>Dual GR</th><th>TMD</th><th>SMORE</th><th>TD-flows</th><th>NF</th><th class="bt-ours">GTSE-r</th><th class="bt-ours">GTSE</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>scene-play</td><td>20±4</td><td>25±5</td><td>6±2</td><td>31±4</td><td>17±2</td><td>19±15</td><td>7±2</td><td>13±4</td><td>35±4</td><td>9±3</td><td class="bt-ours">60±5</td><td class="bt-ours"><strong>69±6</strong></td></tr>
+                <tr><td>scene-noisy</td><td>10±1</td><td>7±3</td><td>2±1</td><td>24±3</td><td>9±3</td><td>12±7</td><td>7±1</td><td>3±2</td><td>19±4</td><td>5±2</td><td class="bt-ours">37±4</td><td class="bt-ours"><strong>55±6</strong></td></tr>
+                <tr><td>puzzle-4x4-play</td><td>1±1</td><td>2±1</td><td>22±8</td><td><strong>36±3</strong></td><td>2±1</td><td>17±6</td><td>1±1</td><td>0±1</td><td>4±2</td><td>1±1</td><td class="bt-ours">26±6</td><td class="bt-ours"><strong>40±4</strong></td></tr>
+                <tr><td>puzzle-4x4-noisy</td><td>1±0</td><td>0±0</td><td>6±2</td><td>9±3</td><td>0±0</td><td>2±3</td><td>0±0</td><td>0±0</td><td>1±0</td><td>1±0</td><td class="bt-ours">9±2</td><td class="bt-ours"><strong>22±2</strong></td></tr>
+                <tr><td>cube-triple-play</td><td>5±2</td><td>2±1</td><td>1±0</td><td>1±1</td><td>0±1</td><td>13±2</td><td>1±1</td><td>2±3</td><td>16±3</td><td>0±0</td><td class="bt-ours">7±1</td><td class="bt-ours"><strong>18±1</strong></td></tr>
+                <tr><td>cube-triple-noisy</td><td>2±1</td><td>1±1</td><td>0±1</td><td>0±0</td><td>0±1</td><td>4±2</td><td>0±0</td><td>1±1</td><td><strong>8±2</strong></td><td>1±1</td><td class="bt-ours">4±1</td><td class="bt-ours"><strong>8±1</strong></td></tr>
+                <tr><td>antmaze-large-navigate</td><td>34±4</td><td>73±6</td><td>15±8</td><td>29±6</td><td>32±5</td><td>43±6</td><td>29±4</td><td>35±3</td><td>30±9</td><td>51±16</td><td class="bt-ours"><strong>78±4</strong></td><td class="bt-ours">53±4</td></tr>
+                <tr class="bt-mean"><td><strong>Mean</strong></td><td>10.4</td><td>15.7</td><td>7.4</td><td>18.6</td><td>8.6</td><td>15.7</td><td>6.4</td><td>7.7</td><td>16.1</td><td>9.7</td><td class="bt-ours">31.6</td><td class="bt-ours-mean">37.9</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
       </div>
-      <p class="fig-caption"><strong>Left:</strong> Performance generally improves with \(K_{\max}\), the upper limit of the time-score integral, with diminishing gains as \(k \to 1\). <strong>Right:</strong> Performance improves with the number of time-score evaluations \(N\) and saturates between \(N = 20\) and \(N = 30\). Puzzle-4x4-play and antmaze-large-navigate; mean over 8 seeds with 95% CI.</p>
+
+      <!-- Q5 -->
+      <div class="rq" id="rq5">
+        <div class="rq-q"><span class="rq-n">Q5.</span>Do GTSE-r representations transfer to reward-based RL?</div>
+        <div style="overflow: hidden;">
+          <div class="float-fig" style="float: right; margin: 0 0 12px 24px; text-align: center; width: 180px;">
+            <img src="scene-play.png" alt="OGBench scene environment" style="width: 180px; display: block; border-radius: 6px;">
+            <p class="fig-caption" style="max-width: 180px; margin: 6px 0 0; font-size: 13px;">scene-play</p>
+          </div>
+          <div class="answer" style="margin-top: 4px;"><b class="short">Yes.</b> We freeze each method's representation encoder and train a Flow Q-Learning (FQL) critic on top of it, on the 5 reward-based <strong>scene-play</strong> tasks. Frozen GTSE-r features get the highest mean success, <strong>62.2%</strong>, against 46.6% for TD-JEPA and 58.2% for vanilla FQL trained end-to-end. GTSE-r matches FQL on tasks 1 to 3, where both are near saturation. On task 4 it scores about <strong>4×</strong> higher (36% vs 9%).</div>
+        </div>
+        <div class="chart" id="rew-chart"></div>
+        <details class="full-table">
+          <summary>Full table</summary>
+          <div style="overflow-x:auto; margin: 10px 0 6px;">
+            <table class="bt-table" id="rew-table">
+              <caption style="caption-side:bottom; font-size:15px; color:#111; text-align:left; padding-top:8px; font-style:italic;">Reward-based RL on scene-play with frozen representation encoders. Success rate (%) over 4 seeds (± 95% bootstrapped CI). Click a row to switch the chart; hover a method to highlight it.</caption>
+              <thead>
+                <tr><th>Task</th><th>CRL</th><th>FB</th><th>TD-JEPA</th><th>BYOL-γ</th><th>Dual GR</th><th>TMD</th><th>Vanilla FQL</th><th class="bt-ours">GTSE-r</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>task 1</td><td>67±6</td><td>58±33</td><td>98±5</td><td>51±27</td><td>37±7</td><td>1±2</td><td><strong>100±0</strong></td><td class="bt-ours"><strong>100±1</strong></td></tr>
+                <tr><td>task 2</td><td>14±12</td><td>17±19</td><td>32±22</td><td>8±8</td><td>4±3</td><td>0±0</td><td><strong>83±23</strong></td><td class="bt-ours"><strong>81±12</strong></td></tr>
+                <tr><td>task 3</td><td>27±13</td><td>1±2</td><td>85±11</td><td>10±6</td><td>11±9</td><td>0±0</td><td><strong>99±3</strong></td><td class="bt-ours">94±5</td></tr>
+                <tr><td>task 4</td><td>10±5</td><td>0±0</td><td><strong>18±14</strong></td><td>10±4</td><td>7±4</td><td>0±0</td><td>9±7</td><td class="bt-ours"><strong>36±18</strong></td></tr>
+                <tr><td>task 5</td><td>2±2</td><td>0±0</td><td>0±0</td><td>0±0</td><td>4±7</td><td>0±0</td><td>0±0</td><td class="bt-ours">0±0</td></tr>
+                <tr class="bt-mean"><td><strong>Mean</strong></td><td>24.0</td><td>15.2</td><td>46.6</td><td>15.8</td><td>12.6</td><td>0.2</td><td>58.2</td><td class="bt-ours-mean">62.2</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+      </div>
     </div>
 
     <div class="section-divider"></div>
@@ -533,9 +662,8 @@
     // Smooth scroll for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(a => {
       a.addEventListener('click', e => {
-        e.preventDefault();
-        const target = document.querySelector(a.getAttribute('href'));
-        if (target) target.scrollIntoView({ behavior: 'smooth' });
+        const target = a.getAttribute('href').length > 1 && document.querySelector(a.getAttribute('href'));
+        if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
       });
     });
 
